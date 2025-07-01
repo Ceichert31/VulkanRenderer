@@ -1,38 +1,54 @@
-﻿// VulkanRenderer.cpp : Defines the entry point for the application.
-//
+﻿#include "VulkanRenderer.h"
 
-#include "VulkanRenderer.h"
+void HelloTriangleApp::run()
+{
+	initWindow();
+	init();
+	update();
+	cleanup();
+}
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/vec4.hpp>
-#include <glm/mat4x4.hpp>
-
-#include <iostream>
-
-int main() {
+void HelloTriangleApp::initWindow()
+{
 	glfwInit();
-	
+
+	//Tell glfw we aren't using opengl
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	GLFWwindow * window = glfwCreateWindow(800, 600, "Vulkan window",
-		nullptr, nullptr);
-	uint32_t extensionCount = 0;
-	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
-		nullptr);
-	
-	std::cout << extensionCount << " extensions supported\n";
-	glm::mat4 matrix;
-	glm::vec4 vec;
-	auto test = matrix * vec;
-	
-	while (!glfwWindowShouldClose(window)) {
+
+	//Disable window resizing
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+	mpWindow = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+
+
+}
+
+void HelloTriangleApp::init()
+{
+}
+
+void HelloTriangleApp::update()
+{
+	while (!glfwWindowShouldClose(mpWindow))
+	{
 		glfwPollEvents();
 	}
-	
-	glfwDestroyWindow(window);
+}
+
+void HelloTriangleApp::cleanup()
+{
+	glfwDestroyWindow(mpWindow);
+
 	glfwTerminate();
-	return 0;
+}
+
+void HelloTriangleApp::createInstance()
+{
+	VkApplicationInfo appinfo{};
+	appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	appinfo.pApplicationName = "Hello Triange";
+	appinfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+	appinfo.pEngineName = "No Engine";
+	appinfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+	appinfo.apiVersion = VK_API_VERSION_1_0;
 }
