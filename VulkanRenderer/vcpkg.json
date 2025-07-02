@@ -1,0 +1,10 @@
+{
+    "dependencies": [
+        "assimp",
+        "glfw",
+        "glm",
+        "vulkan",
+        "taskflow",
+        "glslang"
+    ]
+}
