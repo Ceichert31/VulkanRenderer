@@ -8,6 +8,8 @@ int main()
 {
 	HelloTriangleApp app;
 
+	
+
 	try 
 	{
 		app.run();

@@ -23,6 +23,8 @@ private:
 	void cleanup();
 
 	void createInstance();
+	
+	bool hasRequiredExtensions();
 
 	VkInstance mInstance;
 	GLFWwindow* mpWindow;

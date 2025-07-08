@@ -26,6 +26,7 @@ void HelloTriangleApp::initWindow()
 
 void HelloTriangleApp::init()
 {
+	createInstance();
 }
 
 void HelloTriangleApp::update()
@@ -38,6 +39,9 @@ void HelloTriangleApp::update()
 
 void HelloTriangleApp::cleanup()
 {
+	//Deallocate in reverse order to avoid dependency issues
+	vkDestroyInstance(mInstance, nullptr);
+
 	glfwDestroyWindow(mpWindow);
 
 	glfwTerminate();
@@ -67,10 +71,20 @@ void HelloTriangleApp::createInstance()
 	createInfo.enabledLayerCount = 0;
 
 	//Create instace with above settings
-	if (!vkCreateInstance(&createInfo, nullptr, &mInstance) != VK_SUCCESS)
+	if (vkCreateInstance(&createInfo, nullptr, &mInstance) != VK_SUCCESS)
 	{
 		throw std::runtime_error("ERROR: Failed to create instance!\n");
 	}
+
+	//Check we have the vulkan extensions required by GLFW
+	if (!hasRequiredExtensions())
+	{
+		throw std::runtime_error("ERROR: Missing Required Vulkan Extensions");
+	}
+}
+
+bool HelloTriangleApp::hasRequiredExtensions()
+{
 
 	//Retrieve extension count (Can specify layer with first parameter)
 	uint32_t extensionCount = 0;
@@ -79,11 +93,28 @@ void HelloTriangleApp::createInstance()
 	//Create a vector of properties
 	std::vector<VkExtensionProperties> extensions(extensionCount);
 
+	//Retrieve extension data
 	vkEnumerateInstanceExtensionProperties(
 		nullptr,
 		&extensionCount,
 		extensions.data()
 	);
 
+	uint32_t requiredCount = 0;
 
+	//Get required vulkan extensions
+	glfwGetRequiredInstanceExtensions(&requiredCount);
+
+	if (extensionCount < requiredCount)
+	{
+		std::cout << "Available extensions:\n";
+		for (const auto& ext : extensions)
+		{
+			std::cout << '\t' << ext.extensionName << std::endl << ext.specVersion << std::endl;
+		}
+
+		return false;
+	}
+
+	return true;
 }
