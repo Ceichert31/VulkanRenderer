@@ -1,5 +1,4 @@
 ﻿#include "VulkanRenderer.h"
-#include <vector>
 
 void HelloTriangleApp::run()
 {
@@ -79,7 +78,13 @@ void HelloTriangleApp::createInstance()
 	//Check we have the vulkan extensions required by GLFW
 	if (!hasRequiredExtensions())
 	{
-		throw std::runtime_error("ERROR: Missing Required Vulkan Extensions");
+		throw std::runtime_error("ERROR: Missing Required Vulkan Extensions\n");
+	}
+
+	//Check we can use validation layers
+	if (enabledValidationLayers && !checkValidationLayerSupport())
+	{
+		throw std::runtime_error("ERROR: Validation layers requested, but not available!\n");
 	}
 }
 
@@ -117,4 +122,27 @@ bool HelloTriangleApp::hasRequiredExtensions()
 	}
 
 	return true;
+}
+
+bool HelloTriangleApp::checkValidationLayerSupport()
+{
+	//Get Layer count
+	uint32_t layerCount = 0;
+	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+	//Retrieve data on available layers
+	std::vector<VkLayerProperties> availableLayers(layerCount);
+	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+	//Check that all validation layers exsist in available layers
+	for (const char* requiredLayer : validationLayers)
+	{
+		for (const auto& availableLayer : availableLayers)
+		{
+			if (strcmp(requiredLayer, availableLayer.layerName) == 0)
+				return true;
+		}
+	}
+
+	return false;
 }

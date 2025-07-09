@@ -6,9 +6,21 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <iostream>
+#include <vector>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
+
+//Validation layers
+const std::vector<const char*> validationLayers = {
+	"VK_LAYER_KHRONOS_validation"
+};
+
+#ifdef NDEBUG
+const bool enableValidationLayers = false;
+#else // NDEBUG
+const bool enabledValidationLayers = true;
+#endif
 
 class HelloTriangleApp {
 public:
@@ -25,6 +37,8 @@ private:
 	void createInstance();
 	
 	bool hasRequiredExtensions();
+
+	bool checkValidationLayerSupport();
 
 	VkInstance mInstance;
 	GLFWwindow* mpWindow;
