@@ -6,13 +6,19 @@
 
 int main() 
 {
-	GraphicsPipeline app;
+	GraphicsPipeline* graphicsPipeline = new GraphicsPipeline();
 
 	try 
 	{
-		app.init();
-		app.update();
-		app.cleanup();
+		//Init the graphics pipeline
+		graphicsPipeline->init();
+
+		//Update it
+		graphicsPipeline->update();
+
+		//Clean it up
+		delete graphicsPipeline;
+		graphicsPipeline = nullptr;
 	}
 	catch (const std::exception& e) 
 	{

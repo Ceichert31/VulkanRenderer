@@ -34,20 +34,10 @@ void GraphicsPipeline::init()
 	setupDebugMessenger();
 }
 
-void GraphicsPipeline::update()
-{
-	while (!glfwWindowShouldClose(mpWindow))
-	{
-		glfwPollEvents();
-	}
-}
-
 void GraphicsPipeline::cleanup()
 {
 	//Deallocate in reverse order to avoid dependency issues
 	glfwDestroyWindow(mpWindow);
-
-	vkDestroyInstance(mInstance, nullptr);
 
 	if (enabledValidationLayers)
 	{
@@ -55,7 +45,18 @@ void GraphicsPipeline::cleanup()
 			mDebugMessenger, nullptr);
 	}
 
+	//Destroy instance last to prevent memory leaks
+	vkDestroyInstance(mInstance, nullptr);
+
 	glfwTerminate();
+}
+
+void GraphicsPipeline::update()
+{
+	while (!glfwWindowShouldClose(mpWindow))
+	{
+		glfwPollEvents();
+	}
 }
 
 void GraphicsPipeline::createInstance()
