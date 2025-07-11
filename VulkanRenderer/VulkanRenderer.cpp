@@ -80,6 +80,9 @@ void GraphicsPipeline::createInstance()
 	createInfo.enabledExtensionCount = (uint32_t)extensions.size();
 	createInfo.ppEnabledExtensionNames = extensions.data();
 
+	//Create a second debug messenger for debugging createInstance
+	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+
 	//Check we have the vulkan extensions required by GLFW
 	if (!hasRequiredExtensions())
 	{
@@ -97,10 +100,17 @@ void GraphicsPipeline::createInstance()
 	{
 		createInfo.enabledLayerCount = (uint32_t)validationLayers.size();
 		createInfo.ppEnabledLayerNames = validationLayers.data();
+
+		//Setup debug messenger now so we can debug our instance creation
+		populateDebugMessengerCreateInfo(debugCreateInfo);
+		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)
+			&debugCreateInfo;
 	}
 	else
 	{
 		createInfo.enabledLayerCount = 0;
+
+		createInfo.pNext = nullptr;
 	}
 
 	//Create instace with VkInstanceCreateInfo
@@ -117,8 +127,20 @@ void GraphicsPipeline::setupDebugMessenger()
 {
 	if (!enabledValidationLayers) return;
 
+	//Populate info for messenger
 	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
-	createInfo.sType = 
+	populateDebugMessengerCreateInfo(createInfo);
+
+	//Confirm messenger is setup
+	if (createDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mDebugMessenger) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to setup debug messenger!\n");
+	}
+}
+
+void GraphicsPipeline::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+{
+	createInfo.sType =
 		VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 
 	//Call callback for these severities 
@@ -136,12 +158,6 @@ void GraphicsPipeline::setupDebugMessenger()
 	//Set callback
 	createInfo.pfnUserCallback = debugCallback;
 	createInfo.pUserData = nullptr;
-
-	//Confirm messenger is setup
-	if (createDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mDebugMessenger) != VK_SUCCESS)
-	{
-		throw std::runtime_error("ERROR: Failed to setup debug messenger!\n");
-	}
 }
 
 /// <summary>

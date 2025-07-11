@@ -36,6 +36,7 @@ private:
 	void initWindow();
 	void createInstance();
 	void setupDebugMessenger();
+	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
 	VkResult vkCreateInstance_Ext(const VkInstanceCreateInfo* pCreateInfo,
 		const VkAllocationCallbacks* pAllocator,
