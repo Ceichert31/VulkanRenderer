@@ -6,13 +6,13 @@
 
 int main() 
 {
-	HelloTriangleApp app;
-
-	
+	GraphicsPipeline app;
 
 	try 
 	{
-		app.run();
+		app.init();
+		app.update();
+		app.cleanup();
 	}
 	catch (const std::exception& e) 
 	{

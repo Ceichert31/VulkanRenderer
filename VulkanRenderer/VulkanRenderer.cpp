@@ -1,14 +1,8 @@
 ﻿#include "VulkanRenderer.h"
 
-void HelloTriangleApp::run()
-{
-	initWindow();
-	init();
-	update();
-	cleanup();
-}
 
-void HelloTriangleApp::initWindow()
+
+void GraphicsPipeline::initWindow()
 {
 	glfwInit();
 
@@ -21,12 +15,26 @@ void HelloTriangleApp::initWindow()
 	mpWindow = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 }
 
-void HelloTriangleApp::init()
+GraphicsPipeline::GraphicsPipeline()
 {
-	createInstance();
+	mInstance = VkInstance();
+	mDebugMessenger = VkDebugUtilsMessengerEXT();
+	mpWindow = nullptr;
 }
 
-void HelloTriangleApp::update()
+GraphicsPipeline::~GraphicsPipeline()
+{
+	cleanup();
+}
+
+void GraphicsPipeline::init()
+{
+	initWindow();
+	createInstance();
+	setupDebugMessenger();
+}
+
+void GraphicsPipeline::update()
 {
 	while (!glfwWindowShouldClose(mpWindow))
 	{
@@ -34,17 +42,23 @@ void HelloTriangleApp::update()
 	}
 }
 
-void HelloTriangleApp::cleanup()
+void GraphicsPipeline::cleanup()
 {
 	//Deallocate in reverse order to avoid dependency issues
+	glfwDestroyWindow(mpWindow);
+
 	vkDestroyInstance(mInstance, nullptr);
 
-	glfwDestroyWindow(mpWindow);
+	if (enabledValidationLayers)
+	{
+		destroyDebugUtilsMessengerEXT(mInstance,
+			mDebugMessenger, nullptr);
+	}
 
 	glfwTerminate();
 }
 
-void HelloTriangleApp::createInstance()
+void GraphicsPipeline::createInstance()
 {
 	//Setup app info
 	VkApplicationInfo appinfo{};
@@ -95,7 +109,48 @@ void HelloTriangleApp::createInstance()
 	}
 }
 
-VkResult HelloTriangleApp::vkCreateInstance_Ext(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance)
+/// <summary>
+/// Initializes the debug messenger and flags which messeges to recieve
+/// </summary>
+void GraphicsPipeline::setupDebugMessenger()
+{
+	if (!enabledValidationLayers) return;
+
+	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+	createInfo.sType = 
+		VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+
+	//Call callback for these severities 
+	createInfo.messageSeverity =
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+
+	//Call callback for these message types
+	createInfo.messageType =
+		VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+
+	//Set callback
+	createInfo.pfnUserCallback = debugCallback;
+	createInfo.pUserData = nullptr;
+
+	//Confirm messenger is setup
+	if (createDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mDebugMessenger) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to setup debug messenger!\n");
+	}
+}
+
+/// <summary>
+/// Wrapper for vkCreateInstance that handles and prevents errors
+/// </summary>
+/// <param name="pCreateInfo"></param>
+/// <param name="pAllocator"></param>
+/// <param name="pInstance"></param>
+/// <returns></returns>
+VkResult GraphicsPipeline::vkCreateInstance_Ext(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance)
 {
 	if (pCreateInfo == nullptr || pInstance == nullptr)
 	{
@@ -105,9 +160,7 @@ VkResult HelloTriangleApp::vkCreateInstance_Ext(const VkInstanceCreateInfo* pCre
 	return vkCreateInstance(pCreateInfo, pAllocator, pInstance);
 }
 
-
-
-bool HelloTriangleApp::hasRequiredExtensions()
+bool GraphicsPipeline::hasRequiredExtensions()
 {
 
 	//Retrieve extension count (Can specify layer with first parameter)
@@ -143,7 +196,28 @@ bool HelloTriangleApp::hasRequiredExtensions()
 	return true;
 }
 
-bool HelloTriangleApp::checkValidationLayerSupport()
+std::vector<const char*> GraphicsPipeline::getRequiredExtensions()
+{
+	//Retrieve extension count
+	uint32_t extensionCount = 0;
+	const char** glfwExtensions;
+
+	//Get required vulkan extensions
+	glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
+
+	std::vector<const char*> extensions(glfwExtensions,
+		glfwExtensions + extensionCount);
+
+	//Add debug extension
+	if (enabledValidationLayers)
+	{
+		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	}
+
+	return extensions;
+}
+
+bool GraphicsPipeline::checkValidationLayerSupport()
 {
 	//Get Layer count
 	uint32_t layerCount = 0;
@@ -166,23 +240,73 @@ bool HelloTriangleApp::checkValidationLayerSupport()
 	return false;
 }
 
-std::vector<const char*> HelloTriangleApp::getRequiredExtensions()
+/// <summary>
+/// Callback function for vulkan debug messages
+/// </summary>
+/// <param name="messageSeverity">The severity of the message 
+/// (Diagnostic, Info, Warning, Error) </param>
+/// <param name="messageType">What the message is relating to
+/// (General, Validation, Performance)</param>
+/// <param name="pCallbackData">Contains the details of the message</param>
+/// <param name="pUserData"></param>
+/// <returns></returns>
+VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsPipeline::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
-	//Retrieve extension count
-	uint32_t extensionCount = 0;
-	const char** glfwExtensions;
-
-	//Get required vulkan extensions
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
-
-	std::vector<const char*> extensions(glfwExtensions, 
-		glfwExtensions + extensionCount);
-
-	//Add debug extension
-	if (enabledValidationLayers)
+	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+	
+	//Can optionally add debug for pObjects to be printed when severity is an error
+	if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 	{
-		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		//Debug attached objects
 	}
 
-	return extensions;
+	return VK_FALSE;
+}
+
+/// <summary>
+/// Looks up the vkCreateDebugUtilsMessengerEXT 
+/// function and passes our debug messenger to it
+/// </summary>
+/// <param name="instance"></param>
+/// <param name="pCreateInfo"></param>
+/// <param name="pAllocator"></param>
+/// <param name="pDebugMessenger"></param>
+/// <returns></returns>
+VkResult GraphicsPipeline::createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
+{
+	//Try to load messenger function
+	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)
+		vkGetInstanceProcAddr(instance,
+			"vkCreateDebugUtilsMessengerEXT");
+
+	//Run function if not null
+	if (func != nullptr)
+	{
+		return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+	}
+	else
+	{
+		return VK_ERROR_EXTENSION_NOT_PRESENT;
+	}
+}
+
+/// <summary>
+/// Looks up the vkDestroyDebugUtilsMessengerEXT 
+/// function and passes our debug messenger to it
+/// </summary>
+/// <param name="instance"></param>
+/// <param name="debugMessenger"></param>
+/// <param name="pAllocator"></param>
+void GraphicsPipeline::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
+{
+	//Try to load deletion function from address
+	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)
+		vkGetInstanceProcAddr(instance,
+			"vkDestroyDebugUtilsMessengerEXT");
+
+	//Run function if not null
+	if (func != nullptr)
+	{
+		func(instance, debugMessenger, pAllocator);
+	}
 }
