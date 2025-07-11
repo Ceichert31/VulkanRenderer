@@ -13,7 +13,7 @@ const uint32_t HEIGHT = 600;
 
 //Validation layers
 const std::vector<const char*> validationLayers = {
-	"VK_LAYER_KHRONOS_validation"
+	"VK_LAYER_KHRONOS_validation",
 };
 
 #ifdef NDEBUG
@@ -35,10 +35,15 @@ private:
 	void cleanup();
 
 	void createInstance();
-	
+	VkResult vkCreateInstance_Ext(const VkInstanceCreateInfo* pCreateInfo,
+		const VkAllocationCallbacks* pAllocator,
+		VkInstance* instance);
+
 	bool hasRequiredExtensions();
 
 	bool checkValidationLayerSupport();
+
+	std::vector<const char*> getRequiredExtensions();
 
 	VkInstance mInstance;
 	GLFWwindow* mpWindow;

@@ -19,8 +19,6 @@ void HelloTriangleApp::initWindow()
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
 	mpWindow = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-
-
 }
 
 void HelloTriangleApp::init()
@@ -48,6 +46,7 @@ void HelloTriangleApp::cleanup()
 
 void HelloTriangleApp::createInstance()
 {
+	//Setup app info
 	VkApplicationInfo appinfo{};
 	appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appinfo.pApplicationName = "Hello Triange";
@@ -56,24 +55,15 @@ void HelloTriangleApp::createInstance()
 	appinfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 	appinfo.apiVersion = VK_API_VERSION_1_0;
 
+	//Setup instance creation info
 	VkInstanceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appinfo;
 
-	uint32_t glfwExtensionCount = 0;
-	const char** glfwExtensions;
-
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-	createInfo.enabledExtensionCount = glfwExtensionCount;
-	createInfo.ppEnabledExtensionNames = glfwExtensions;
-	createInfo.enabledLayerCount = 0;
-
-	//Create instace with above settings
-	if (vkCreateInstance(&createInfo, nullptr, &mInstance) != VK_SUCCESS)
-	{
-		throw std::runtime_error("ERROR: Failed to create instance!\n");
-	}
+	//Get extensions
+	auto extensions = getRequiredExtensions();
+	createInfo.enabledExtensionCount = (uint32_t)extensions.size();
+	createInfo.ppEnabledExtensionNames = extensions.data();
 
 	//Check we have the vulkan extensions required by GLFW
 	if (!hasRequiredExtensions())
@@ -84,9 +74,38 @@ void HelloTriangleApp::createInstance()
 	//Check we can use validation layers
 	if (enabledValidationLayers && !checkValidationLayerSupport())
 	{
-		throw std::runtime_error("ERROR: Validation layers requested, but not available!\n");
+		throw std::runtime_error("ERROR: Missing Required Validation Layers!\n");
+	}
+
+	//Fill info in VK create info
+	if (enabledValidationLayers)
+	{
+		createInfo.enabledLayerCount = (uint32_t)validationLayers.size();
+		createInfo.ppEnabledLayerNames = validationLayers.data();
+	}
+	else
+	{
+		createInfo.enabledLayerCount = 0;
+	}
+
+	//Create instace with VkInstanceCreateInfo
+	if (vkCreateInstance_Ext(&createInfo, nullptr, &mInstance) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to create instance!\n");
 	}
 }
+
+VkResult HelloTriangleApp::vkCreateInstance_Ext(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance)
+{
+	if (pCreateInfo == nullptr || pInstance == nullptr)
+	{
+		std::cout << "Null pointer passed to required parameter!\n";
+		return VK_ERROR_INITIALIZATION_FAILED;
+	}
+	return vkCreateInstance(pCreateInfo, pAllocator, pInstance);
+}
+
+
 
 bool HelloTriangleApp::hasRequiredExtensions()
 {
@@ -145,4 +164,25 @@ bool HelloTriangleApp::checkValidationLayerSupport()
 	}
 
 	return false;
+}
+
+std::vector<const char*> HelloTriangleApp::getRequiredExtensions()
+{
+	//Retrieve extension count
+	uint32_t extensionCount = 0;
+	const char** glfwExtensions;
+
+	//Get required vulkan extensions
+	glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
+
+	std::vector<const char*> extensions(glfwExtensions, 
+		glfwExtensions + extensionCount);
+
+	//Add debug extension
+	if (enabledValidationLayers)
+	{
+		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	}
+
+	return extensions;
 }
