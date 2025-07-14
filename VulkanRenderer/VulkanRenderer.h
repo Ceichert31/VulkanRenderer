@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+#include <map>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -37,7 +38,7 @@ private:
 	void createInstance();
 
 	void pickPhysicalDevice();
-	bool isDeviceSuitable(VkPhysicalDevice device);
+	int getDeviceSuitablility(VkPhysicalDevice device);
 
 	void setupDebugMessenger();
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);

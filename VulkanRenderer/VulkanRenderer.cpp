@@ -142,25 +142,56 @@ void GraphicsPipeline::pickPhysicalDevice()
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
 
+	//Map of available devices 
+	std::multimap<int, VkPhysicalDevice> availableDevices;
+
 	for (const auto& device : devices)
 	{
-		if (isDeviceSuitable(device))
-		{
-			physicalDevice = device;
-			break;
-		}
+		//Get device suitability
+		int suitability = getDeviceSuitablility(device);
+		availableDevices.insert(std::make_pair(suitability, device));
 	}
 
-	if (physicalDevice == VK_NULL_HANDLE)
+	//Get highest rated device, if there is no device throw error
+	if (availableDevices.rbegin()->first > 0)
+	{
+		physicalDevice = availableDevices.rbegin()->second;
+	}
+	else
 	{
 		throw std::runtime_error("ERROR: Failed to find a suitable GPU\n");
 	}
 
 }
 
-bool GraphicsPipeline::isDeviceSuitable(VkPhysicalDevice device)
+int GraphicsPipeline::getDeviceSuitablility(VkPhysicalDevice device)
 {
-	return true;
+	int suitability = 0;
+
+	//Get device properties
+	VkPhysicalDeviceProperties deviceProperties;
+	vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+	//Get device features
+	VkPhysicalDeviceFeatures deviceFeatures;
+	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+	//Discrete GPUs have a performance advantage
+	if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+	{
+		suitability += 1000;
+	}
+
+	//Max possible size of textures affects graphics quality
+	suitability += deviceProperties.limits.maxImageDimension2D;
+
+	//Program can't function without geometry shader
+	if (!deviceFeatures.geometryShader)
+	{
+		return 0;
+	}
+
+	return suitability;
 }
 
 /// <summary>
