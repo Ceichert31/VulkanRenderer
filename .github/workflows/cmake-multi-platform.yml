@@ -84,6 +84,12 @@ jobs:
         -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
         -S ${{ github.workspace }}/VulkanRenderer
 
+    - name: Artifact Logs
+      uses: actions/upload-artifact@v1
+      with:
+        name: vcpkg-manifest-install
+        path:  /home/runner/work/VulkanRenderer/VulkanRenderer/build/vcpkg-manifest-install.log
+
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
