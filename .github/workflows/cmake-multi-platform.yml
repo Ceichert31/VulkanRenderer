@@ -58,7 +58,20 @@ jobs:
     - name: Setup vcpkg manager
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 'a42af01b72c28a8e1d7b48107b33e4f286a55ef6'
+         vcpkgGitCommitId: '8eb57355a4ffb410a2e94c07b4dca2dffbee8e50'
+
+    - name: Restore vcpkg cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{github.worksspace}}/vcpkg
+          ${{github.worksspace}}/vcpkg/buildtrees
+          ${{github.worksspace}}/vcpkg/packages
+          ${{github.worksspace}}/vcpkg/downloads
+        key: vcpkg-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ hashFiles('VulkanRenderer/vcpkg.json') }}
+        restore-keys: |
+          vcpkg-${{ matrix.os }}-${{ matrix.c_compiler }}-
+          vcpkg-${{ matrix.os }}-
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
