@@ -32,6 +32,7 @@ void GraphicsPipeline::init()
 	initWindow();
 	createInstance();
 	setupDebugMessenger();
+	pickPhysicalDevice();
 }
 
 void GraphicsPipeline::cleanup()
@@ -118,6 +119,48 @@ void GraphicsPipeline::createInstance()
 	{
 		throw std::runtime_error("ERROR: Failed to create instance!\n");
 	}
+}
+
+/// <summary>
+/// Setup the graphics reference
+/// </summary>
+void GraphicsPipeline::pickPhysicalDevice()
+{
+	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+
+	//Query number of devices
+	uint32_t deviceCount = 0;
+	vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
+
+	//Check device count
+	if (deviceCount < 1)
+	{
+		throw std::runtime_error("ERROR: Failed to find GPUs with Vulkan Support!\n");
+	}
+
+	//Allocate array to hold all handles
+	std::vector<VkPhysicalDevice> devices(deviceCount);
+	vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
+
+	for (const auto& device : devices)
+	{
+		if (isDeviceSuitable(device))
+		{
+			physicalDevice = device;
+			break;
+		}
+	}
+
+	if (physicalDevice == VK_NULL_HANDLE)
+	{
+		throw std::runtime_error("ERROR: Failed to find a suitable GPU\n");
+	}
+
+}
+
+bool GraphicsPipeline::isDeviceSuitable(VkPhysicalDevice device)
+{
+	return true;
 }
 
 /// <summary>

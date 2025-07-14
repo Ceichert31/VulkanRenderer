@@ -35,6 +35,10 @@ private:
 
 	void initWindow();
 	void createInstance();
+
+	void pickPhysicalDevice();
+	bool isDeviceSuitable(VkPhysicalDevice device);
+
 	void setupDebugMessenger();
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
