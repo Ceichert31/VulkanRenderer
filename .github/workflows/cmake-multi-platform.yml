@@ -85,7 +85,7 @@ jobs:
         -S ${{ github.workspace }}/VulkanRenderer
 
     - name: Artifact Logs
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: vcpkg-manifest-install
         path:  /home/runner/work/VulkanRenderer/VulkanRenderer/build/vcpkg-manifest-install.log
