@@ -1,4 +1,6 @@
 {
+    "name": "vulkanrenderer",
+    "version": "1.0.0",
     "dependencies": [
         "assimp",
         "glfw3",
