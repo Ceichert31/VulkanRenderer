@@ -1,7 +1,5 @@
 ﻿#include "VulkanRenderer.h"
 
-
-
 void GraphicsPipeline::initWindow()
 {
 	glfwInit();
@@ -196,7 +194,41 @@ int GraphicsPipeline::getDeviceSuitablility(VkPhysicalDevice device)
 		return 0;
 	}
 
+	//Check if indices contains any queue families
+	QueueFamilyIndices indices = findQueueFamilies(device);
+	if (!indices.isComplete())
+	{
+		return 0;
+	}
+
 	return suitability;
+}
+
+QueueFamilyIndices GraphicsPipeline::findQueueFamilies(VkPhysicalDevice device)
+{
+	QueueFamilyIndices indices;
+
+	//Get queue family count
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+	
+	//Get data using family count and store in vector
+	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(device, 
+		&queueFamilyCount, queueFamilies.data());
+
+	//Find a queue family that supports VK_QUEUE_GRAPHICS_BIT
+	int supportedFamilies = 0;
+	for (const auto& queueFamily : queueFamilies)
+	{
+		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			indices.graphicsFamily = supportedFamilies;
+		}
+		supportedFamilies++;
+	}
+
+	return indices;
 }
 
 /// <summary>
