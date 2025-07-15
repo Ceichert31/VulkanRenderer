@@ -31,6 +31,7 @@ void GraphicsPipeline::init()
 	createInstance();
 	setupDebugMessenger();
 	pickPhysicalDevice();
+	createLogicalDevice();
 }
 
 void GraphicsPipeline::cleanup()
@@ -204,6 +205,39 @@ int GraphicsPipeline::getDeviceSuitablility(VkPhysicalDevice device)
 	return suitability;
 }
 
+
+
+void GraphicsPipeline::createLogicalDevice()
+{
+	//Queue family
+	//This is null for now as placeholder
+	QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
+
+	//Queue creation info
+	VkDeviceQueueCreateInfo queueCreateInfo{};
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+	queueCreateInfo.queueCount = 1;
+
+	//Required even if only using one queue
+	float queuePriority = 1.0f;
+	queueCreateInfo.pQueuePriorities = &queuePriority;
+
+	//Define what features we want
+	VkPhysicalDeviceFeatures deviceFeatures{};
+
+	//Device creation info
+	VkDeviceCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+	//Queue info
+	createInfo.pQueueCreateInfos = &queueCreateInfo;
+	createInfo.queueCreateInfoCount = 1;
+
+	//Set features
+	createInfo.pEnabledFeatures = &deviceFeatures;
+}
+
 QueueFamilyIndices GraphicsPipeline::findQueueFamilies(VkPhysicalDevice device)
 {
 	QueueFamilyIndices indices;
@@ -211,10 +245,10 @@ QueueFamilyIndices GraphicsPipeline::findQueueFamilies(VkPhysicalDevice device)
 	//Get queue family count
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-	
+
 	//Get data using family count and store in vector
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(device, 
+	vkGetPhysicalDeviceQueueFamilyProperties(device,
 		&queueFamilyCount, queueFamilies.data());
 
 	//Find a queue family that supports VK_QUEUE_GRAPHICS_BIT

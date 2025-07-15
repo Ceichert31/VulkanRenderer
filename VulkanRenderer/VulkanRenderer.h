@@ -24,6 +24,16 @@ const bool enableValidationLayers = false;
 const bool enabledValidationLayers = true;
 #endif
 
+struct QueueFamilyIndices
+{
+	std::optional<uint32_t> graphicsFamily;
+
+	bool isComplete()
+	{
+		return graphicsFamily.has_value();
+	}
+};
+
 class GraphicsPipeline {
 public:
 	GraphicsPipeline();
@@ -40,6 +50,8 @@ private:
 
 	void pickPhysicalDevice();
 	int getDeviceSuitablility(VkPhysicalDevice device);
+
+	void createLogicalDevice();
 
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
@@ -76,14 +88,6 @@ private:
 	VkInstance mInstance;
 	VkDebugUtilsMessengerEXT mDebugMessenger;
 	GLFWwindow* mpWindow;
-};
-
-struct QueueFamilyIndices
-{
-	std::optional<uint32_t> graphicsFamily;
-
-	bool isComplete()
-	{
-		return graphicsFamily.has_value();
-	}
+	VkDevice mDevice;
+	VkPhysicalDevice mPhysicalDevice;
 };
