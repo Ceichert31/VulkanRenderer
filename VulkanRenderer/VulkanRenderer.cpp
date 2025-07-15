@@ -122,7 +122,7 @@ void GraphicsPipeline::createInstance()
 }
 
 /// <summary>
-/// Setup the graphics reference
+/// Sets up the GPU and selects the best available
 /// </summary>
 void GraphicsPipeline::pickPhysicalDevice()
 {
@@ -145,9 +145,9 @@ void GraphicsPipeline::pickPhysicalDevice()
 	//Map of available devices 
 	std::multimap<int, VkPhysicalDevice> availableDevices;
 
+	//Get suitability of all devices and add to ordered map
 	for (const auto& device : devices)
 	{
-		//Get device suitability
 		int suitability = getDeviceSuitablility(device);
 		availableDevices.insert(std::make_pair(suitability, device));
 	}
@@ -164,6 +164,11 @@ void GraphicsPipeline::pickPhysicalDevice()
 
 }
 
+/// <summary>
+/// Grades devices based on device features and properties
+/// </summary>
+/// <param name="device"></param>
+/// <returns></returns>
 int GraphicsPipeline::getDeviceSuitablility(VkPhysicalDevice device)
 {
 	int suitability = 0;
