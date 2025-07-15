@@ -3,11 +3,16 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#define VK_USE_PLATFORM_WIN32_KHR
+#define GLFW_EXPSOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+
 #include <stdexcept>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
 #include <map>
+#include <set>
 #include <optional>
 
 const uint32_t WIDTH = 800;
@@ -24,16 +29,23 @@ const bool enableValidationLayers = false;
 const bool enabledValidationLayers = true;
 #endif
 
+/// <summary>
+/// A struct that holds information on queue families
+/// </summary>
 struct QueueFamilyIndices
 {
 	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
 
-	bool isComplete()
+	bool isComplete() const
 	{
-		return graphicsFamily.has_value();
+		return graphicsFamily.has_value() && presentFamily.has_value();
 	}
 };
 
+/// <summary>
+/// The main vulkan rendering pipeline
+/// </summary>
 class GraphicsPipeline {
 public:
 	GraphicsPipeline();
@@ -47,6 +59,7 @@ private:
 
 	void initWindow();
 	void createInstance();
+	void createSurface();
 
 	void pickPhysicalDevice();
 	int getDeviceSuitablility(VkPhysicalDevice device);
@@ -91,5 +104,6 @@ private:
 	VkDevice mDevice;
 	VkPhysicalDevice mPhysicalDevice;
 	VkQueue mGraphicsQueue;
+	VkQueue mPresentQueue;
 	VkSurfaceKHR mSurface;
 };

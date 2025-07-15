@@ -30,16 +30,15 @@ void GraphicsPipeline::init()
 	initWindow();
 	createInstance();
 	setupDebugMessenger();
+	createSurface();
 	pickPhysicalDevice();
 	createLogicalDevice();
 }
 
 void GraphicsPipeline::cleanup()
 {
-	//Clean up physical device
 	vkDestroyDevice(mDevice, nullptr);
 
-	//Deallocate in reverse order to avoid dependency issues
 	glfwDestroyWindow(mpWindow);
 
 	if (enabledValidationLayers)
@@ -47,6 +46,8 @@ void GraphicsPipeline::cleanup()
 		destroyDebugUtilsMessengerEXT(mInstance,
 			mDebugMessenger, nullptr);
 	}
+
+	vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
 
 	//Destroy instance last to prevent memory leaks
 	vkDestroyInstance(mInstance, nullptr);
@@ -121,6 +122,36 @@ void GraphicsPipeline::createInstance()
 	{
 		throw std::runtime_error("ERROR: Failed to create instance!\n");
 	}
+}
+
+void GraphicsPipeline::createSurface()
+{
+	if (glfwCreateWindowSurface(mInstance, mpWindow, nullptr, &mSurface)
+		!= VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to create a window surface!\n");
+	}
+
+	QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
+
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+	std::set<uint32_t> uniqueQueueFamilies =
+	{
+		indices.graphicsFamily.value(), indices.presentFamily.value()
+	};
+
+	float queuePriority = 1.0f;
+	for (uint32_t queueFamily : uniqueQueueFamilies)
+	{
+		VkDeviceQueueCreateInfo queueCreateInfo{};
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = queueFamily;
+		queueCreateInfo.queueCount = 1;
+		queueCreateInfo.pQueuePriorities = &queuePriority;
+		queueCreateInfos.push_back(queueCreateInfo);
+	}
+
+
 }
 
 /// <summary>
@@ -261,6 +292,9 @@ void GraphicsPipeline::createLogicalDevice()
 
 	//Use index 0 since we are using only one queue
 	vkGetDeviceQueue(mDevice, indices.graphicsFamily.value(), 0, &mGraphicsQueue);
+
+	//createInfo.queueCreateInfoCount = (uint32_t)queueCreateInfos.size());
+	//createInfo.pQueueCreateInfos = queueCreateInfos.data();
 }
 
 QueueFamilyIndices GraphicsPipeline::findQueueFamilies(VkPhysicalDevice device)
@@ -278,11 +312,13 @@ QueueFamilyIndices GraphicsPipeline::findQueueFamilies(VkPhysicalDevice device)
 
 	//Find a queue family that supports VK_QUEUE_GRAPHICS_BIT
 	int supportedFamilies = 0;
+	VkBool32 presentSupport = false;
 	for (const auto& queueFamily : queueFamilies)
 	{
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
 			indices.graphicsFamily = supportedFamilies;
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, supportedFamilies, mSurface, &presentSupport);
 		}
 
 		if (indices.isComplete())
@@ -290,6 +326,12 @@ QueueFamilyIndices GraphicsPipeline::findQueueFamilies(VkPhysicalDevice device)
 			break;
 		}
 		supportedFamilies++;
+	}
+
+	//Store presentation family queue index
+	if (presentSupport)
+	{
+		indices.presentFamily = supportedFamilies;
 	}
 
 	return indices;
