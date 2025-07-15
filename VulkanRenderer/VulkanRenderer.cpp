@@ -36,6 +36,9 @@ void GraphicsPipeline::init()
 
 void GraphicsPipeline::cleanup()
 {
+	//Clean up physical device
+	vkDestroyDevice(mDevice, nullptr);
+
 	//Deallocate in reverse order to avoid dependency issues
 	glfwDestroyWindow(mpWindow);
 
@@ -161,6 +164,7 @@ void GraphicsPipeline::pickPhysicalDevice()
 		throw std::runtime_error("ERROR: Failed to find a suitable GPU\n");
 	}
 
+	mPhysicalDevice = physicalDevice;
 }
 
 /// <summary>
@@ -205,12 +209,12 @@ int GraphicsPipeline::getDeviceSuitablility(VkPhysicalDevice device)
 	return suitability;
 }
 
-
-
+/// <summary>
+/// Creates a logical device using previously created physical device
+/// </summary>
 void GraphicsPipeline::createLogicalDevice()
 {
 	//Queue family
-	//This is null for now as placeholder
 	QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
 
 	//Queue creation info
@@ -236,6 +240,24 @@ void GraphicsPipeline::createLogicalDevice()
 
 	//Set features
 	createInfo.pEnabledFeatures = &deviceFeatures;
+
+	createInfo.enabledExtensionCount = 0;
+
+	if (enabledValidationLayers)
+	{
+		createInfo.enabledLayerCount = (uint32_t)validationLayers.size();
+		createInfo.ppEnabledLayerNames = validationLayers.data();
+	}
+	else
+	{
+		createInfo.enabledLayerCount = 0;
+	}
+
+	//Create device
+	if (vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to create logical device!\n");
+	}
 }
 
 QueueFamilyIndices GraphicsPipeline::findQueueFamilies(VkPhysicalDevice device)
