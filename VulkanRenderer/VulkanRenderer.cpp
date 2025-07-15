@@ -258,6 +258,9 @@ void GraphicsPipeline::createLogicalDevice()
 	{
 		throw std::runtime_error("ERROR: Failed to create logical device!\n");
 	}
+
+	//Use index 0 since we are using only one queue
+	vkGetDeviceQueue(mDevice, indices.graphicsFamily.value(), 0, &mGraphicsQueue);
 }
 
 QueueFamilyIndices GraphicsPipeline::findQueueFamilies(VkPhysicalDevice device)

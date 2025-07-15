@@ -90,4 +90,6 @@ private:
 	GLFWwindow* mpWindow;
 	VkDevice mDevice;
 	VkPhysicalDevice mPhysicalDevice;
+	VkQueue mGraphicsQueue;
+	VkSurfaceKHR mSurface;
 };
