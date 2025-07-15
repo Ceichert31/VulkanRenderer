@@ -225,6 +225,11 @@ QueueFamilyIndices GraphicsPipeline::findQueueFamilies(VkPhysicalDevice device)
 		{
 			indices.graphicsFamily = supportedFamilies;
 		}
+
+		if (indices.isComplete())
+		{
+			break;
+		}
 		supportedFamilies++;
 	}
 
