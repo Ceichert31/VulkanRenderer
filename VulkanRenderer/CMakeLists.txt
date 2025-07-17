@@ -11,6 +11,9 @@ endif()
 
 project ("VulkanRenderer")
 
+set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
+set(VCPKG_ENABLE_MANIFEST ON)
+
 # Add source to this project's executable.
 add_executable (VulkanRenderer "VulkanRenderer.cpp" "VulkanRenderer.h" "main.cpp")
 
