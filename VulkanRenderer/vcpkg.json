@@ -8,11 +8,5 @@
         "vulkan",
         "taskflow",
         "glslang"
-    ],
-    "overrides": [
-    {
-      "name": "zlib",
-      "version": "1.2.13"
-    }
-  ]
+    ]
 }
