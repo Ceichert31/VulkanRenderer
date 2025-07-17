@@ -54,6 +54,15 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
+    - name: Cache apt packages
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/cache@v4
+      with:
+        path: /var/cache/apt/archives
+        key: apt-${{ matrix.os }}-${{ hashFiles('.github/workflows/**') }}
+        restore-keys: |
+          apt-${{ matrix.os }}-
+  
     - name: Install build tools & System dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -65,10 +74,27 @@ jobs:
       if: matrix.os == 'windows-latest'
       uses: microsoft/setup-msbuild@v1.0.2
 
+    - name: Cache Windows packages
+      if: matrix.os == 'windows-latest'
+      uses: actions/cache@v4
+      with:
+        path: C:\ProgramData\chocolatey\lib
+        key: choco-${{ matrix.os }}-pkgconfiglite-${{ hashFiles('.github/workflows/**') }}
+        restore-keys: |
+          choco-${{ matrix.os }}-pkgconfiglite-
+          choco-${{ matrix.os }}-
+
     - name: Install pkg-config (Windows)
       if: matrix.os == 'windows-latest'
       run: |
         choco install pkgconfiglite -y
+
+    # Setup ccache for faster compilation
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ccache-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cpp', '**/*.h', '**/*.hpp') }}
+        max-size: 2G
 
       #Download project dependencies through vcpkg
     - name: Setup vcpkg manager
@@ -86,16 +112,32 @@ jobs:
           ${{github.workspace}}/vcpkg/buildtrees
           ${{github.workspace}}/vcpkg/packages
           ${{github.workspace}}/vcpkg/downloads
-        key: vcpkg-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ hashFiles('**/vcpkg.json') }}
+          ${{github.workspace}}/vcpkg/installed
+        key: vcpkg-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}-${{ hashFiles('**/vcpkg.json', '**/vcpkg-configuration.json', '.github/workflows/**') }}
         restore-keys: |
+          vcpkg-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}-
           vcpkg-${{ matrix.os }}-${{ matrix.c_compiler }}-
           vcpkg-${{ matrix.os }}-
+          vcpkg-
+
+      # Cache CMake build output for faster incremental builds
+    - name: Cache CMake build output
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.strings.outputs.build-output-dir }}
+        key: cmake-build-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cpp', '**/*.h', '**/*.hpp', '**/vcpkg.json') }}
+        restore-keys: |
+          cmake-build-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}-
+          cmake-build-${{ matrix.os }}-${{ matrix.c_compiler }}-
+          cmake-build-${{ matrix.os }}-
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+       cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        -DCMAKE_C_COMPILER_LAUNCHER=ccache
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
@@ -111,3 +153,7 @@ jobs:
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest --build-config ${{ matrix.build_type }}
+
+    # Display cache statistics for debugging
+    - name: Display ccache statistics
+      run: ccache -s
