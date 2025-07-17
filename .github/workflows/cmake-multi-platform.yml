@@ -64,21 +64,28 @@ jobs:
       if: matrix.os == 'windows-latest'
       uses: microsoft/setup-msbuild@v1.0.2
 
+    - name: Install pkg-config (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install pkgconfiglite -y
+
       #Download project dependencies through vcpkg
     - name: Setup vcpkg manager
       uses: lukka/run-vcpkg@v11
       with:
-         vcpkgGitCommitId: '8eb57355a4ffb410a2e94c07b4dca2dffbee8e50'
+         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+         vcpkgGitCommitId: '4002e3abc6d3e468c73d2d9777a7dd96af5dc224'
+      env:
+        VCPKG_FORCE_SYSTEM_BINARIES: 1
 
     - name: Restore vcpkg cache
       uses: actions/cache@v4
       with:
         path: |
-          ${{github.worksspace}}/vcpkg
-          ${{github.worksspace}}/vcpkg/buildtrees
-          ${{github.worksspace}}/vcpkg/packages
-          ${{github.worksspace}}/vcpkg/downloads
-        key: vcpkg-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ hashFiles('VulkanRenderer/vcpkg.json') }}
+          ${{github.workspace}}/vcpkg/buildtrees
+          ${{github.workspace}}/vcpkg/packages
+          ${{github.workspace}}/vcpkg/downloads
+        key: vcpkg-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ hashFiles('**/vcpkg.json') }}
         restore-keys: |
           vcpkg-${{ matrix.os }}-${{ matrix.c_compiler }}-
           vcpkg-${{ matrix.os }}-
@@ -93,13 +100,7 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
         -S ${{ github.workspace }}/VulkanRenderer
-
-    - name: Artifact Logs
-      uses: actions/upload-artifact@v4
-      with:
-        name: vcpkg-manifest-install
-        path:  /home/runner/work/VulkanRenderer/VulkanRenderer/build/vcpkg-manifest-install.log
-
+        
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
