@@ -170,4 +170,5 @@ jobs:
 
     # Display cache statistics for debugging
     - name: Display ccache statistics
+      if: matrix.os == 'ubuntu-latest'
       run: ccache -s
