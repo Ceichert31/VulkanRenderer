@@ -54,12 +54,13 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-    - name: Install build tools (Linux)
+    - name: Install build tools & System dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential make
-
+        sude apt-get instal -y libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config
+        
     - name: Setup build tools (Windows)
       if: matrix.os == 'windows-latest'
       uses: microsoft/setup-msbuild@v1.0.2
