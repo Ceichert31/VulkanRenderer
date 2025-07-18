@@ -131,27 +131,6 @@ void GraphicsPipeline::createSurface()
 	{
 		throw std::runtime_error("ERROR: Failed to create a window surface!\n");
 	}
-
-	QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
-
-	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<uint32_t> uniqueQueueFamilies =
-	{
-		indices.graphicsFamily.value(), indices.presentFamily.value()
-	};
-
-	float queuePriority = 1.0f;
-	for (uint32_t queueFamily : uniqueQueueFamilies)
-	{
-		VkDeviceQueueCreateInfo queueCreateInfo{};
-		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = queueFamily;
-		queueCreateInfo.queueCount = 1;
-		queueCreateInfo.pQueuePriorities = &queuePriority;
-		queueCreateInfos.push_back(queueCreateInfo);
-	}
-
-
 }
 
 /// <summary>
@@ -232,12 +211,39 @@ int GraphicsPipeline::getDeviceSuitablility(VkPhysicalDevice device)
 
 	//Check if indices contains any queue families
 	QueueFamilyIndices indices = findQueueFamilies(device);
-	if (!indices.isComplete())
+	if (!indices.isComplete() || !checkDeviceExtensionSupport(device))
 	{
 		return 0;
 	}
 
 	return suitability;
+}
+/// <summary>
+/// Checks whether a device can support the swap chain and associated required extensions
+/// </summary>
+/// <param name="device"></param>
+/// <returns></returns>
+bool GraphicsPipeline::checkDeviceExtensionSupport(VkPhysicalDevice device)
+{
+	//Enumerate extension and check if required extensions are all present
+
+	uint32_t extensionCount;
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+
+	//Retrieve extension data
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+	
+	std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+
+	//Remove required extensions from the set
+	for (const auto& extension : availableExtensions)
+	{
+		requiredExtensions.erase(extension.extensionName);
+	}
+
+	//If the set is empty it means we have all our required 
+	return requiredExtensions.empty();
 }
 
 /// <summary>
@@ -248,44 +254,52 @@ void GraphicsPipeline::createLogicalDevice()
 	//Queue family
 	QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
 
-	//Queue creation info
-	VkDeviceQueueCreateInfo queueCreateInfo{};
-	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-	queueCreateInfo.queueCount = 1;
+	//Unique list of queue families
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfoList;
+	std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 	//Required even if only using one queue
 	float queuePriority = 1.0f;
-	queueCreateInfo.pQueuePriorities = &queuePriority;
+
+	//Setup each queue family and add it to the list
+	for (uint32_t queueFamily : uniqueQueueFamilies)
+	{
+		VkDeviceQueueCreateInfo queueCreateInfo{};
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = queueFamily;
+		queueCreateInfo.queueCount = 1;
+		queueCreateInfo.pQueuePriorities = &queuePriority;
+		queueCreateInfoList.push_back(queueCreateInfo);
+	}
 
 	//Define what features we want
 	VkPhysicalDeviceFeatures deviceFeatures{};
 
 	//Device creation info
-	VkDeviceCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	VkDeviceCreateInfo deviceCreateInfo{};
+	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
 	//Queue info
-	createInfo.pQueueCreateInfos = &queueCreateInfo;
-	createInfo.queueCreateInfoCount = 1;
+	deviceCreateInfo.pQueueCreateInfos = queueCreateInfoList.data();
+	deviceCreateInfo.queueCreateInfoCount = (uint32_t)queueCreateInfoList.size();
 
 	//Set features
-	createInfo.pEnabledFeatures = &deviceFeatures;
+	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
-	createInfo.enabledExtensionCount = 0;
+	deviceCreateInfo.enabledExtensionCount = 0;
 
 	if (enabledValidationLayers)
 	{
-		createInfo.enabledLayerCount = (uint32_t)validationLayers.size();
-		createInfo.ppEnabledLayerNames = validationLayers.data();
+		deviceCreateInfo.enabledLayerCount = (uint32_t)validationLayers.size();
+		deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
 	}
 	else
 	{
-		createInfo.enabledLayerCount = 0;
+		deviceCreateInfo.enabledLayerCount = 0;
 	}
 
 	//Create device
-	if (vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice) != VK_SUCCESS)
+	if (vkCreateDevice(mPhysicalDevice, &deviceCreateInfo, nullptr, &mDevice) != VK_SUCCESS)
 	{
 		throw std::runtime_error("ERROR: Failed to create logical device!\n");
 	}
@@ -293,10 +307,14 @@ void GraphicsPipeline::createLogicalDevice()
 	//Use index 0 since we are using only one queue
 	vkGetDeviceQueue(mDevice, indices.graphicsFamily.value(), 0, &mGraphicsQueue);
 
-	//createInfo.queueCreateInfoCount = (uint32_t)queueCreateInfos.size());
-	//createInfo.pQueueCreateInfos = queueCreateInfos.data();
+	vkGetDeviceQueue(mDevice, indices.presentFamily.value(), 0, &mPresentQueue);
 }
 
+/// <summary>
+/// Returns queue families that support specfic requirements
+/// </summary>
+/// <param name="device"></param>
+/// <returns></returns>
 QueueFamilyIndices GraphicsPipeline::findQueueFamilies(VkPhysicalDevice device)
 {
 	QueueFamilyIndices indices;
@@ -310,71 +328,36 @@ QueueFamilyIndices GraphicsPipeline::findQueueFamilies(VkPhysicalDevice device)
 	vkGetPhysicalDeviceQueueFamilyProperties(device,
 		&queueFamilyCount, queueFamilies.data());
 
+	//NOTE: Refactor to be encapsulated in one loop
 	//Find a queue family that supports VK_QUEUE_GRAPHICS_BIT
-	int supportedFamilies = 0;
+	int queueFamilyIndex = 0;
 	VkBool32 presentSupport = false;
+	
+	//Find available queue families that support graphics commands 
+	// and windows surface presentation
 	for (const auto& queueFamily : queueFamilies)
 	{
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
-			indices.graphicsFamily = supportedFamilies;
-			vkGetPhysicalDeviceSurfaceSupportKHR(device, supportedFamilies, mSurface, &presentSupport);
+			indices.graphicsFamily = queueFamilyIndex;
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, queueFamilyIndex, mSurface, &presentSupport);
 		}
 
+		//Store presentation family queue index if presentation is supported
+		if (presentSupport)
+		{
+			indices.presentFamily = queueFamilyIndex;
+		}
+
+		//Break out of loop early if complete
 		if (indices.isComplete())
 		{
 			break;
 		}
-		supportedFamilies++;
-	}
-
-	//Store presentation family queue index
-	if (presentSupport)
-	{
-		indices.presentFamily = supportedFamilies;
+		queueFamilyIndex++;
 	}
 
 	return indices;
-}
-
-/// <summary>
-/// Initializes the debug messenger and flags which messeges to recieve
-/// </summary>
-void GraphicsPipeline::setupDebugMessenger()
-{
-	if (!enabledValidationLayers) return;
-
-	//Populate info for messenger
-	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
-	populateDebugMessengerCreateInfo(createInfo);
-
-	//Confirm messenger is setup
-	if (createDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mDebugMessenger) != VK_SUCCESS)
-	{
-		throw std::runtime_error("ERROR: Failed to setup debug messenger!\n");
-	}
-}
-
-void GraphicsPipeline::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
-{
-	createInfo.sType =
-		VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-
-	//Call callback for these severities 
-	createInfo.messageSeverity =
-		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-		VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-
-	//Call callback for these message types
-	createInfo.messageType =
-		VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
-		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
-
-	//Set callback
-	createInfo.pfnUserCallback = debugCallback;
-	createInfo.pUserData = nullptr;
 }
 
 /// <summary>
@@ -474,6 +457,47 @@ bool GraphicsPipeline::checkValidationLayerSupport()
 	return false;
 }
 
+#pragma region Debug Messenger Methods
+/// <summary>
+/// Initializes the debug messenger and flags which messeges to recieve
+/// </summary>
+void GraphicsPipeline::setupDebugMessenger()
+{
+	if (!enabledValidationLayers) return;
+
+	//Populate info for messenger
+	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+	populateDebugMessengerCreateInfo(createInfo);
+
+	//Confirm messenger is setup
+	if (createDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mDebugMessenger) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to setup debug messenger!\n");
+	}
+}
+
+void GraphicsPipeline::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+{
+	createInfo.sType =
+		VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+
+	//Call callback for these severities 
+	createInfo.messageSeverity =
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+
+	//Call callback for these message types
+	createInfo.messageType =
+		VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+
+	//Set callback
+	createInfo.pfnUserCallback = debugCallback;
+	createInfo.pUserData = nullptr;
+}
+
 /// <summary>
 /// Callback function for vulkan debug messages
 /// </summary>
@@ -487,7 +511,7 @@ bool GraphicsPipeline::checkValidationLayerSupport()
 VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsPipeline::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
 	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-	
+
 	//Can optionally add debug for pObjects to be printed when severity is an error
 	if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 	{
@@ -544,3 +568,5 @@ void GraphicsPipeline::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebu
 		func(instance, debugMessenger, pAllocator);
 	}
 }
+
+#pragma endregion
