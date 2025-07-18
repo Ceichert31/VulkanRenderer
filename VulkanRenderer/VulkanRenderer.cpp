@@ -286,8 +286,11 @@ void GraphicsPipeline::createLogicalDevice()
 	//Set features
 	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
-	deviceCreateInfo.enabledExtensionCount = 0;
+	//Extension settings
+	deviceCreateInfo.enabledExtensionCount = (uint32_t)deviceExtensions.size();
+	deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
+	//Validation layer settings
 	if (enabledValidationLayers)
 	{
 		deviceCreateInfo.enabledLayerCount = (uint32_t)validationLayers.size();
