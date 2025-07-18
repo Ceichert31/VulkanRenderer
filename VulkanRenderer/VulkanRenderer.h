@@ -44,6 +44,13 @@ struct QueueFamilyIndices
 	}
 };
 
+struct SwapChainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR capabilities;
+	std::vector<VkSurfaceFormatKHR> formats;
+	std::vector<VkPresentModeKHR> presentModes;
+};
+
 /// <summary>
 /// The main vulkan rendering pipeline
 /// </summary>
@@ -66,6 +73,9 @@ private:
 
 	int getDeviceSuitablility(VkPhysicalDevice device);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+
+	SwapChainSupportDetails getSwapChainSupport(VkPhysicalDevice device);
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 
 	void createLogicalDevice();
 

@@ -216,6 +216,17 @@ int GraphicsPipeline::getDeviceSuitablility(VkPhysicalDevice device)
 		return 0;
 	}
 
+	//Check for swap chain support
+	SwapChainSupportDetails swapChainSupport = getSwapChainSupport(device);
+	if (swapChainSupport.formats.empty() && swapChainSupport.presentModes.empty())
+	{
+		return 0;
+	}
+	else
+	{
+		suitability += swapChainSupport.formats.size() + swapChainSupport.presentModes.size();
+	}
+
 	return suitability;
 }
 /// <summary>
@@ -244,6 +255,32 @@ bool GraphicsPipeline::checkDeviceExtensionSupport(VkPhysicalDevice device)
 
 	//If the set is empty it means we have all our required 
 	return requiredExtensions.empty();
+}
+
+SwapChainSupportDetails GraphicsPipeline::getSwapChainSupport(VkPhysicalDevice device)
+{
+	SwapChainSupportDetails details;
+
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, mSurface, &details.capabilities);
+
+	uint32_t formatCount = 0;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, nullptr);
+	
+	//Resize vector to hold surface format data
+	if (formatCount != 0)
+	{
+		details.formats.resize(formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, details.formats.data());
+	}
+
+
+
+	return details;
+}
+
+VkSurfaceFormatKHR GraphicsPipeline::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+{
+	return VkSurfaceFormatKHR();
 }
 
 /// <summary>
