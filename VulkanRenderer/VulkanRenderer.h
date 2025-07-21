@@ -19,9 +19,12 @@
 #include <limits>
 #include <algorithm>
 #include <fstream>
+#include <filesystem>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
+
+const std::string WORKING_DIRECTORY = "../../../";
 
 //Validation layers
 const std::vector<const char*> validationLayers = {

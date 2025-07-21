@@ -529,8 +529,8 @@ void VulkanRenderer::createImageViews()
 
 void VulkanRenderer::createGraphicsPipeline()
 {
-	auto vertShaderCode = readFile("shaders/vert.spv");
-	auto fragShaderCode = readFile("shaders/frag.spv");
+	auto vertShaderCode = readFile(WORKING_DIRECTORY + "shaders/vert.spv");
+	auto fragShaderCode = readFile(WORKING_DIRECTORY + "shaders/frag.spv");
 
 	std::cout << "Vertex Shader file size: " << vertShaderCode.size() << std::endl;
 	std::cout << "Fragment Shader file size: " << fragShaderCode.size() << std::endl;
@@ -806,6 +806,7 @@ std::vector<char> readFile(const std::string& filename)
 {
 	//Start reading file from the end to gauge file size
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
 	if (!file.is_open())
 	{
 		throw std::runtime_error("ERROR: Failed to open file named: " + filename);
