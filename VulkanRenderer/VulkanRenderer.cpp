@@ -34,10 +34,16 @@ void GraphicsPipeline::init()
 	pickPhysicalDevice();
 	createLogicalDevice();
 	createSwapChain();
+	createImageViews();
 }
 
 void GraphicsPipeline::cleanup()
 {
+	for (auto imageView : mSwapChainImageViews)
+	{
+		vkDestroyImageView(mDevice, imageView, nullptr);
+	}
+
 	vkDestroySwapchainKHR(mDevice, mSwapChain, nullptr);
 
 	vkDestroyDevice(mDevice, nullptr);
@@ -260,6 +266,75 @@ bool GraphicsPipeline::checkDeviceExtensionSupport(VkPhysicalDevice device)
 	return requiredExtensions.empty();
 }
 
+
+/// <summary>
+/// Creates a logical device using previously created physical device
+/// </summary>
+void GraphicsPipeline::createLogicalDevice()
+{
+	//Queue family
+	QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
+
+	//Unique list of queue families
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfoList;
+	std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+
+	//Required even if only using one queue
+	float queuePriority = 1.0f;
+
+	//Setup each queue family and add it to the list
+	for (uint32_t queueFamily : uniqueQueueFamilies)
+	{
+		VkDeviceQueueCreateInfo queueCreateInfo{};
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = queueFamily;
+		queueCreateInfo.queueCount = 1;
+		queueCreateInfo.pQueuePriorities = &queuePriority;
+		queueCreateInfoList.push_back(queueCreateInfo);
+	}
+
+	//Define what features we want
+	VkPhysicalDeviceFeatures deviceFeatures{};
+
+	//Device creation info
+	VkDeviceCreateInfo deviceCreateInfo{};
+	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+	//Queue info
+	deviceCreateInfo.pQueueCreateInfos = queueCreateInfoList.data();
+	deviceCreateInfo.queueCreateInfoCount = (uint32_t)queueCreateInfoList.size();
+
+	//Set features
+	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+
+	//Extension settings
+	deviceCreateInfo.enabledExtensionCount = (uint32_t)deviceExtensions.size();
+	deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
+
+	//Validation layer settings
+	if (enabledValidationLayers)
+	{
+		deviceCreateInfo.enabledLayerCount = (uint32_t)validationLayers.size();
+		deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+	}
+	else
+	{
+		deviceCreateInfo.enabledLayerCount = 0;
+	}
+
+	//Create device
+	if (vkCreateDevice(mPhysicalDevice, &deviceCreateInfo, nullptr, &mDevice) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to create logical device!\n");
+	}
+
+	//Use index 0 since we are using only one queue
+	vkGetDeviceQueue(mDevice, indices.graphicsFamily.value(), 0, &mGraphicsQueue);
+
+	vkGetDeviceQueue(mDevice, indices.presentFamily.value(), 0, &mPresentQueue);
+}
+
+
 SwapChainSupportDetails GraphicsPipeline::getSwapChainSupport(VkPhysicalDevice device)
 {
 	SwapChainSupportDetails details;
@@ -352,78 +427,14 @@ VkExtent2D GraphicsPipeline::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& ca
 	}
 }
 
-/// <summary>
-/// Creates a logical device using previously created physical device
-/// </summary>
-void GraphicsPipeline::createLogicalDevice()
-{
-	//Queue family
-	QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
-
-	//Unique list of queue families
-	std::vector<VkDeviceQueueCreateInfo> queueCreateInfoList;
-	std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
-
-	//Required even if only using one queue
-	float queuePriority = 1.0f;
-
-	//Setup each queue family and add it to the list
-	for (uint32_t queueFamily : uniqueQueueFamilies)
-	{
-		VkDeviceQueueCreateInfo queueCreateInfo{};
-		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = queueFamily;
-		queueCreateInfo.queueCount = 1;
-		queueCreateInfo.pQueuePriorities = &queuePriority;
-		queueCreateInfoList.push_back(queueCreateInfo);
-	}
-
-	//Define what features we want
-	VkPhysicalDeviceFeatures deviceFeatures{};
-
-	//Device creation info
-	VkDeviceCreateInfo deviceCreateInfo{};
-	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
-	//Queue info
-	deviceCreateInfo.pQueueCreateInfos = queueCreateInfoList.data();
-	deviceCreateInfo.queueCreateInfoCount = (uint32_t)queueCreateInfoList.size();
-
-	//Set features
-	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
-
-	//Extension settings
-	deviceCreateInfo.enabledExtensionCount = (uint32_t)deviceExtensions.size();
-	deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
-
-	//Validation layer settings
-	if (enabledValidationLayers)
-	{
-		deviceCreateInfo.enabledLayerCount = (uint32_t)validationLayers.size();
-		deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
-	}
-	else
-	{
-		deviceCreateInfo.enabledLayerCount = 0;
-	}
-
-	//Create device
-	if (vkCreateDevice(mPhysicalDevice, &deviceCreateInfo, nullptr, &mDevice) != VK_SUCCESS)
-	{
-		throw std::runtime_error("ERROR: Failed to create logical device!\n");
-	}
-
-	//Use index 0 since we are using only one queue
-	vkGetDeviceQueue(mDevice, indices.graphicsFamily.value(), 0, &mGraphicsQueue);
-
-	vkGetDeviceQueue(mDevice, indices.presentFamily.value(), 0, &mPresentQueue);
-}
-
 void GraphicsPipeline::createSwapChain()
 {
 	SwapChainSupportDetails swapChainSupport = getSwapChainSupport(mPhysicalDevice);
 
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+
+	//Cache image format for use in swap chain image creation
+	mSwapChainImageFormat = surfaceFormat.format;
 
 	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
 
@@ -443,7 +454,7 @@ void GraphicsPipeline::createSwapChain()
 	createInfo.surface = mSurface;
 
 	createInfo.minImageCount = imageCount;
-	createInfo.imageFormat = surfaceFormat.format;
+	createInfo.imageFormat = mSwapChainImageFormat;
 	createInfo.imageColorSpace = surfaceFormat.colorSpace;
 	createInfo.imageExtent = extent;
 	createInfo.imageArrayLayers = 1;
@@ -475,6 +486,43 @@ void GraphicsPipeline::createSwapChain()
 	if (vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &mSwapChain) != VK_SUCCESS)
 	{
 		throw std::runtime_error("ERROR: Failed to create swap chain!\n");
+	}
+
+	//Retrieve max image count size and resize vector
+	vkGetSwapchainImagesKHR(mDevice, mSwapChain, &imageCount, nullptr);
+	mSwapChainImages.resize(imageCount);
+	vkGetSwapchainImagesKHR(mDevice, mSwapChain, &imageCount, mSwapChainImages.data());
+
+}
+
+void GraphicsPipeline::createImageViews()
+{
+	mSwapChainImageViews.resize(mSwapChainImages.size());
+
+	for (size_t i = 0; i < mSwapChainImages.size(); i++)
+	{
+		VkImageViewCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		createInfo.image = mSwapChainImages[i];
+		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		createInfo.format = mSwapChainImageFormat;
+
+		//Mapping colors
+		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		createInfo.subresourceRange.baseMipLevel = 0;
+		createInfo.subresourceRange.levelCount = 1;
+		createInfo.subresourceRange.baseArrayLayer = 0;
+		createInfo.subresourceRange.layerCount = 1;
+
+		if (vkCreateImageView(mDevice, &createInfo, nullptr, &mSwapChainImageViews[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("ERROR: Failed to create image views");
+		}
 	}
 }
 

@@ -76,6 +76,8 @@ private:
 	void createLogicalDevice();
 	void createSwapChain();
 
+	void createImageViews();
+
 	int getDeviceSuitablility(VkPhysicalDevice device);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
@@ -125,4 +127,7 @@ private:
 	VkQueue mPresentQueue;
 	VkSurfaceKHR mSurface;
 	VkSwapchainKHR mSwapChain;
+	std::vector<VkImage> mSwapChainImages;
+	std::vector<VkImageView> mSwapChainImageViews;
+	VkFormat mSwapChainImageFormat;
 };
