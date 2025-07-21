@@ -6,7 +6,7 @@
 
 int main() 
 {
-	GraphicsPipeline* graphicsPipeline = new GraphicsPipeline();
+	VulkanRenderer* graphicsPipeline = new VulkanRenderer();
 
 	try 
 	{

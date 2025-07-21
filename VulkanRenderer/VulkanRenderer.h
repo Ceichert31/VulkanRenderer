@@ -57,10 +57,10 @@ struct SwapChainSupportDetails
 /// <summary>
 /// The main vulkan rendering pipeline
 /// </summary>
-class GraphicsPipeline {
+class VulkanRenderer {
 public:
-	GraphicsPipeline();
-	~GraphicsPipeline();
+	VulkanRenderer();
+	~VulkanRenderer();
 
 	void init();
 	void update();
@@ -74,14 +74,16 @@ private:
 
 	void pickPhysicalDevice();
 	void createLogicalDevice();
-	void createSwapChain();
 
+	void createSwapChain();
 	void createImageViews();
+
+	void createGraphicsPipeline();
 
 	int getDeviceSuitablility(VkPhysicalDevice device);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
-	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
 
 	SwapChainSupportDetails getSwapChainSupport(VkPhysicalDevice device);
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);

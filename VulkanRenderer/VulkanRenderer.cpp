@@ -1,6 +1,6 @@
 ﻿#include "VulkanRenderer.h"
 
-void GraphicsPipeline::initWindow()
+void VulkanRenderer::initWindow()
 {
 	glfwInit();
 
@@ -13,19 +13,19 @@ void GraphicsPipeline::initWindow()
 	mpWindow = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 }
 
-GraphicsPipeline::GraphicsPipeline()
+VulkanRenderer::VulkanRenderer()
 {
 	mInstance = VkInstance();
 	mDebugMessenger = VkDebugUtilsMessengerEXT();
 	mpWindow = nullptr;
 }
 
-GraphicsPipeline::~GraphicsPipeline()
+VulkanRenderer::~VulkanRenderer()
 {
 	cleanup();
 }
 
-void GraphicsPipeline::init()
+void VulkanRenderer::init()
 {
 	initWindow();
 	createInstance();
@@ -35,9 +35,10 @@ void GraphicsPipeline::init()
 	createLogicalDevice();
 	createSwapChain();
 	createImageViews();
+	createGraphicsPipeline();
 }
 
-void GraphicsPipeline::cleanup()
+void VulkanRenderer::cleanup()
 {
 	for (auto imageView : mSwapChainImageViews)
 	{
@@ -64,7 +65,7 @@ void GraphicsPipeline::cleanup()
 	glfwTerminate();
 }
 
-void GraphicsPipeline::update()
+void VulkanRenderer::update()
 {
 	while (!glfwWindowShouldClose(mpWindow))
 	{
@@ -72,7 +73,7 @@ void GraphicsPipeline::update()
 	}
 }
 
-void GraphicsPipeline::createInstance()
+void VulkanRenderer::createInstance()
 {
 	//Setup app info
 	VkApplicationInfo appinfo{};
@@ -133,7 +134,7 @@ void GraphicsPipeline::createInstance()
 	}
 }
 
-void GraphicsPipeline::createSurface()
+void VulkanRenderer::createSurface()
 {
 	if (glfwCreateWindowSurface(mInstance, mpWindow, nullptr, &mSurface)
 		!= VK_SUCCESS)
@@ -142,10 +143,11 @@ void GraphicsPipeline::createSurface()
 	}
 }
 
+#pragma region Device Creation Methods
 /// <summary>
 /// Sets up the GPU and selects the best available
 /// </summary>
-void GraphicsPipeline::pickPhysicalDevice()
+void VulkanRenderer::pickPhysicalDevice()
 {
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
@@ -191,7 +193,7 @@ void GraphicsPipeline::pickPhysicalDevice()
 /// </summary>
 /// <param name="device"></param>
 /// <returns></returns>
-int GraphicsPipeline::getDeviceSuitablility(VkPhysicalDevice device)
+int VulkanRenderer::getDeviceSuitablility(VkPhysicalDevice device)
 {
 	int suitability = 0;
 
@@ -243,7 +245,7 @@ int GraphicsPipeline::getDeviceSuitablility(VkPhysicalDevice device)
 /// </summary>
 /// <param name="device"></param>
 /// <returns></returns>
-bool GraphicsPipeline::checkDeviceExtensionSupport(VkPhysicalDevice device)
+bool VulkanRenderer::checkDeviceExtensionSupport(VkPhysicalDevice device)
 {
 	//Enumerate extension and check if required extensions are all present
 
@@ -265,12 +267,10 @@ bool GraphicsPipeline::checkDeviceExtensionSupport(VkPhysicalDevice device)
 	//If the set is empty it means we have all our required 
 	return requiredExtensions.empty();
 }
-
-
 /// <summary>
 /// Creates a logical device using previously created physical device
 /// </summary>
-void GraphicsPipeline::createLogicalDevice()
+void VulkanRenderer::createLogicalDevice()
 {
 	//Queue family
 	QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
@@ -333,9 +333,9 @@ void GraphicsPipeline::createLogicalDevice()
 
 	vkGetDeviceQueue(mDevice, indices.presentFamily.value(), 0, &mPresentQueue);
 }
-
-
-SwapChainSupportDetails GraphicsPipeline::getSwapChainSupport(VkPhysicalDevice device)
+#pragma endregion
+#pragma region Swap Chain Methods
+SwapChainSupportDetails VulkanRenderer::getSwapChainSupport(VkPhysicalDevice device)
 {
 	SwapChainSupportDetails details;
 
@@ -361,7 +361,7 @@ SwapChainSupportDetails GraphicsPipeline::getSwapChainSupport(VkPhysicalDevice d
 /// </summary>
 /// <param name="availableFormats"></param>
 /// <returns></returns>
-VkSurfaceFormatKHR GraphicsPipeline::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+VkSurfaceFormatKHR VulkanRenderer::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
 	for (const auto& availableFormat : availableFormats)
 	{
@@ -381,7 +381,7 @@ VkSurfaceFormatKHR GraphicsPipeline::chooseSwapSurfaceFormat(const std::vector<V
 /// </summary>
 /// <param name="availablePresentModes"></param>
 /// <returns></returns>
-VkPresentModeKHR GraphicsPipeline::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+VkPresentModeKHR VulkanRenderer::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
 	for (const auto& availablePresentMode : availablePresentModes)
 	{
@@ -398,7 +398,7 @@ VkPresentModeKHR GraphicsPipeline::chooseSwapPresentMode(const std::vector<VkPre
 /// </summary>
 /// <param name="capabilities"></param>
 /// <returns></returns>
-VkExtent2D GraphicsPipeline::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+VkExtent2D VulkanRenderer::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 {
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 	{
@@ -427,7 +427,7 @@ VkExtent2D GraphicsPipeline::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& ca
 	}
 }
 
-void GraphicsPipeline::createSwapChain()
+void VulkanRenderer::createSwapChain()
 {
 	SwapChainSupportDetails swapChainSupport = getSwapChainSupport(mPhysicalDevice);
 
@@ -495,7 +495,7 @@ void GraphicsPipeline::createSwapChain()
 
 }
 
-void GraphicsPipeline::createImageViews()
+void VulkanRenderer::createImageViews()
 {
 	mSwapChainImageViews.resize(mSwapChainImages.size());
 
@@ -525,13 +525,19 @@ void GraphicsPipeline::createImageViews()
 		}
 	}
 }
+#pragma endregion
+
+void VulkanRenderer::createGraphicsPipeline()
+{
+
+}
 
 /// <summary>
 /// Returns queue families that support specfic requirements
 /// </summary>
 /// <param name="device"></param>
 /// <returns></returns>
-QueueFamilyIndices GraphicsPipeline::findQueueFamilies(VkPhysicalDevice device)
+QueueFamilyIndices VulkanRenderer::findQueueFamilies(VkPhysicalDevice device) const
 {
 	QueueFamilyIndices indices;
 
@@ -583,7 +589,7 @@ QueueFamilyIndices GraphicsPipeline::findQueueFamilies(VkPhysicalDevice device)
 /// <param name="pAllocator"></param>
 /// <param name="pInstance"></param>
 /// <returns></returns>
-VkResult GraphicsPipeline::vkCreateInstance_Ext(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance)
+VkResult VulkanRenderer::vkCreateInstance_Ext(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance)
 {
 	if (pCreateInfo == nullptr || pInstance == nullptr)
 	{
@@ -593,7 +599,7 @@ VkResult GraphicsPipeline::vkCreateInstance_Ext(const VkInstanceCreateInfo* pCre
 	return vkCreateInstance(pCreateInfo, pAllocator, pInstance);
 }
 
-bool GraphicsPipeline::hasRequiredExtensions()
+bool VulkanRenderer::hasRequiredExtensions()
 {
 
 	//Retrieve extension count (Can specify layer with first parameter)
@@ -629,7 +635,7 @@ bool GraphicsPipeline::hasRequiredExtensions()
 	return true;
 }
 
-std::vector<const char*> GraphicsPipeline::getRequiredExtensions()
+std::vector<const char*> VulkanRenderer::getRequiredExtensions()
 {
 	//Retrieve extension count
 	uint32_t extensionCount = 0;
@@ -650,7 +656,7 @@ std::vector<const char*> GraphicsPipeline::getRequiredExtensions()
 	return extensions;
 }
 
-bool GraphicsPipeline::checkValidationLayerSupport()
+bool VulkanRenderer::checkValidationLayerSupport()
 {
 	//Get Layer count
 	uint32_t layerCount = 0;
@@ -672,12 +678,11 @@ bool GraphicsPipeline::checkValidationLayerSupport()
 
 	return false;
 }
-
 #pragma region Debug Messenger Methods
 /// <summary>
 /// Initializes the debug messenger and flags which messeges to recieve
 /// </summary>
-void GraphicsPipeline::setupDebugMessenger()
+void VulkanRenderer::setupDebugMessenger()
 {
 	if (!enabledValidationLayers) return;
 
@@ -692,7 +697,7 @@ void GraphicsPipeline::setupDebugMessenger()
 	}
 }
 
-void GraphicsPipeline::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+void VulkanRenderer::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 {
 	createInfo.sType =
 		VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -724,7 +729,7 @@ void GraphicsPipeline::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCre
 /// <param name="pCallbackData">Contains the details of the message</param>
 /// <param name="pUserData"></param>
 /// <returns></returns>
-VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsPipeline::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRenderer::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
 	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
@@ -746,7 +751,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsPipeline::debugCallback(VkDebugUtilsMessa
 /// <param name="pAllocator"></param>
 /// <param name="pDebugMessenger"></param>
 /// <returns></returns>
-VkResult GraphicsPipeline::createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
+VkResult VulkanRenderer::createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
 {
 	//Try to load messenger function
 	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)
@@ -771,7 +776,7 @@ VkResult GraphicsPipeline::createDebugUtilsMessengerEXT(VkInstance instance, con
 /// <param name="instance"></param>
 /// <param name="debugMessenger"></param>
 /// <param name="pAllocator"></param>
-void GraphicsPipeline::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
+void VulkanRenderer::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
 {
 	//Try to load deletion function from address
 	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)
