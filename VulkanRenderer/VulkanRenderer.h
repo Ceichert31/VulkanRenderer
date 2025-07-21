@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <limits>
 #include <algorithm>
+#include <fstream>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -118,6 +119,8 @@ private:
 	void destroyDebugUtilsMessengerEXT(VkInstance instance,
 		VkDebugUtilsMessengerEXT debugMessenger,
 		const VkAllocationCallbacks* pAllocator);
+
+	static std::vector<char> readFile(const std::string& filename);
 
 	//Member variables
 	VkInstance mInstance;

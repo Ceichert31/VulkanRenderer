@@ -529,7 +529,11 @@ void VulkanRenderer::createImageViews()
 
 void VulkanRenderer::createGraphicsPipeline()
 {
+	auto vertShaderCode = readFile("shaders/vert.spv");
+	auto fragShaderCode = readFile("shaders/frag.spv");
 
+	std::cout << "Vertex Shader file size: " << vertShaderCode.size() << std::endl;
+	std::cout << "Fragment Shader file size: " << fragShaderCode.size() << std::endl;
 }
 
 /// <summary>
@@ -790,4 +794,27 @@ void VulkanRenderer::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugU
 	}
 }
 
+#pragma endregion
+
+#pragma region Helper Methods
+std::vector<char> VulkanRenderer::readFile(const std::string& filename)
+{
+	//Start reading file from the end to gauge file size
+	std::ifstream file(filename, std::ios::ate | std::ios::binary);
+	if (!file.is_open())
+	{
+		throw std::runtime_error("ERROR: Failed to open file named: " + filename);
+	}
+
+	//Get file size
+	size_t fileSize = (size_t)file.tellg();
+	std::vector<char> buffer(fileSize);
+
+	//Start reading file from start
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+
+	file.close();
+	return buffer;
+}
 #pragma endregion
