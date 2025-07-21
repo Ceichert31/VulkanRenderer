@@ -34,6 +34,8 @@ const std::vector<const char*> deviceExtensions = {
 
 const bool enabledValidationLayers = true;
 
+static std::vector<char> readFile(const std::string& filename);
+
 /// <summary>
 /// A struct that holds information on queue families
 /// </summary>
@@ -119,8 +121,6 @@ private:
 	void destroyDebugUtilsMessengerEXT(VkInstance instance,
 		VkDebugUtilsMessengerEXT debugMessenger,
 		const VkAllocationCallbacks* pAllocator);
-
-	static std::vector<char> readFile(const std::string& filename);
 
 	//Member variables
 	VkInstance mInstance;

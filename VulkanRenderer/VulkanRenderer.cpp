@@ -797,7 +797,12 @@ void VulkanRenderer::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugU
 #pragma endregion
 
 #pragma region Helper Methods
-std::vector<char> VulkanRenderer::readFile(const std::string& filename)
+/// <summary>
+/// Takes a filename and returns a binary vector
+/// </summary>
+/// <param name="filename"></param>
+/// <returns></returns>
+std::vector<char> readFile(const std::string& filename)
 {
 	//Start reading file from the end to gauge file size
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
