@@ -529,6 +529,7 @@ void VulkanRenderer::createImageViews()
 
 void VulkanRenderer::createGraphicsPipeline()
 {
+	//Cache shader code as binary
 	auto vertShaderCode = readFile(WORKING_DIRECTORY + "shaders/vert.spv");
 	auto fragShaderCode = readFile(WORKING_DIRECTORY + "shaders/frag.spv");
 
@@ -554,6 +555,19 @@ void VulkanRenderer::createGraphicsPipeline()
 	fragShaderStageInfo.pName = "main";
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+
+	//Fixed functions
+	//Specify what parts of the pipeline we want to change during runtime
+	std::vector<VkDynamicState> dynamicStates = 
+	{ 
+		VK_DYNAMIC_STATE_VIEWPORT, 
+		VK_DYNAMIC_STATE_SCISSOR 
+	};
+
+	VkPipelineDynamicStateCreateInfo dynamicState{};
+	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicState.dynamicStateCount = (uint32_t)dynamicStates.size();
+	dynamicState.pDynamicStates = dynamicStates.data();
 
 	//Cleanup shader modules
 	vkDestroyShaderModule(mDevice, fragShaderModule, nullptr);
