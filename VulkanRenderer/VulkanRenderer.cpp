@@ -532,13 +532,32 @@ void VulkanRenderer::createGraphicsPipeline()
 	auto vertShaderCode = readFile(WORKING_DIRECTORY + "shaders/vert.spv");
 	auto fragShaderCode = readFile(WORKING_DIRECTORY + "shaders/frag.spv");
 
-	VkShaderModule vertexShaderModule = createShaderModule(vertShaderCode);
-	VkShaderModule fragmentShaderModule = createShaderModule(fragShaderCode);
+	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
 
+	//Programmable pipeline creation info for vertex shader
+	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+
+	vertShaderStageInfo.module = vertShaderModule;
+	vertShaderStageInfo.pName = "main";
+
+	//We can set shader constants here
+	vertShaderStageInfo.pSpecializationInfo = nullptr;
+
+	//Creation info for fragment shader
+	VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragShaderStageInfo.module = fragShaderModule;
+	fragShaderStageInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
 	//Cleanup shader modules
-	vkDestroyShaderModule(mDevice, fragmentShaderModule, nullptr);
-	vkDestroyShaderModule(mDevice, vertexShaderModule, nullptr);
+	vkDestroyShaderModule(mDevice, fragShaderModule, nullptr);
+	vkDestroyShaderModule(mDevice, vertShaderModule, nullptr);
 }
 
 /// <summary>
