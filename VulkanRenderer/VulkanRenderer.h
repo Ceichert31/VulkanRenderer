@@ -140,4 +140,5 @@ private:
 	std::vector<VkImage> mSwapChainImages;
 	std::vector<VkImageView> mSwapChainImageViews;
 	VkFormat mSwapChainImageFormat;
+	VkExtent2D mSwapChainExtent;
 };
