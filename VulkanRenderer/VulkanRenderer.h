@@ -96,6 +96,8 @@ private:
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector <VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
+	VkShaderModule createShaderModule(const std::vector<char>& code);
+
 	VkResult vkCreateInstance_Ext(const VkInstanceCreateInfo* pCreateInfo,
 		const VkAllocationCallbacks* pAllocator,
 		VkInstance* instance);

@@ -532,8 +532,33 @@ void VulkanRenderer::createGraphicsPipeline()
 	auto vertShaderCode = readFile(WORKING_DIRECTORY + "shaders/vert.spv");
 	auto fragShaderCode = readFile(WORKING_DIRECTORY + "shaders/frag.spv");
 
-	std::cout << "Vertex Shader file size: " << vertShaderCode.size() << std::endl;
-	std::cout << "Fragment Shader file size: " << fragShaderCode.size() << std::endl;
+	VkShaderModule vertexShaderModule = createShaderModule(vertShaderCode);
+	VkShaderModule fragmentShaderModule = createShaderModule(fragShaderCode);
+
+
+	//Cleanup shader modules
+	vkDestroyShaderModule(mDevice, fragmentShaderModule, nullptr);
+	vkDestroyShaderModule(mDevice, vertexShaderModule, nullptr);
+}
+
+/// <summary>
+/// Takes a binary vector of shader code and creates a VkShaderModule
+/// </summary>
+/// <param name="code"></param>
+/// <returns></returns>
+VkShaderModule VulkanRenderer::createShaderModule(const std::vector<char>& code)
+{
+	VkShaderModuleCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.codeSize = code.size();
+	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+	VkShaderModule shaderModule;
+	if (vkCreateShaderModule(mDevice, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to create shader module!\n");
+	}
+	return shaderModule;
 }
 
 /// <summary>
