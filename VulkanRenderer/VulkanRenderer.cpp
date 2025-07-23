@@ -35,6 +35,7 @@ void VulkanRenderer::init()
 void VulkanRenderer::cleanup()
 {
 	vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
+	vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
 
 	for (auto imageView : mSwapChainImageViews)
 	{
@@ -544,7 +545,29 @@ void VulkanRenderer::createRenderPass()
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 	
+	//Sub pass layout
+	VkAttachmentReference colorAttachmentRef{};
+	colorAttachmentRef.attachment = 0;
+	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+	//Sub pass description
+	VkSubpassDescription subpass{};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colorAttachmentRef;
+
+	//Render create info
+	VkRenderPassCreateInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.attachmentCount = 1;
+	renderPassInfo.pAttachments = &colorAttachment;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpass;
+
+	if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to create render pass!\n");
+	}
 }
 
 /// <summary>
