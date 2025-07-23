@@ -1,6 +1,6 @@
 ﻿#include "VulkanRenderer.h"
 
-void VulkanRenderer::initWindow()
+void VulkanRenderer::createWindow()
 {
 	glfwInit();
 
@@ -13,13 +13,6 @@ void VulkanRenderer::initWindow()
 	mpWindow = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 }
 
-VulkanRenderer::VulkanRenderer()
-{
-	mInstance = VkInstance();
-	mDebugMessenger = VkDebugUtilsMessengerEXT();
-	mpWindow = nullptr;
-}
-
 VulkanRenderer::~VulkanRenderer()
 {
 	cleanup();
@@ -27,7 +20,7 @@ VulkanRenderer::~VulkanRenderer()
 
 void VulkanRenderer::init()
 {
-	initWindow();
+	createWindow();
 	createInstance();
 	setupDebugMessenger();
 	createSurface();
@@ -35,11 +28,14 @@ void VulkanRenderer::init()
 	createLogicalDevice();
 	createSwapChain();
 	createImageViews();
+	createRenderPass();
 	createGraphicsPipeline();
 }
 
 void VulkanRenderer::cleanup()
 {
+	vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
+
 	for (auto imageView : mSwapChainImageViews)
 	{
 		vkDestroyImageView(mDevice, imageView, nullptr);
@@ -527,6 +523,33 @@ void VulkanRenderer::createImageViews()
 }
 #pragma endregion
 
+void VulkanRenderer::createRenderPass()
+{
+	VkAttachmentDescription colorAttachment{};
+	colorAttachment.format = mSwapChainImageFormat;
+
+	//Only 1 bit because we aren't multisampling as of right now
+	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+
+	//We are clearing the framebuffer each frame 
+	// and storing rendered contents to memory
+	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+	//Discarding stencil framebuffer
+	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	
+	//Set image layout to be unspecified
+	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	
+
+}
+
+/// <summary>
+/// Creates the programmable and fixed functions in the graphics pipeline
+/// </summary>
 void VulkanRenderer::createGraphicsPipeline()
 {
 	//Cache shader code as binary
@@ -623,6 +646,52 @@ void VulkanRenderer::createGraphicsPipeline()
 	multisampling.pSampleMask = nullptr;
 	multisampling.alphaToCoverageEnable = VK_FALSE;
 	multisampling.alphaToOneEnable = VK_FALSE;
+
+	//Depth and stencil testing
+	VkPipelineDepthStencilStateCreateInfo* depthBuffer = nullptr;
+
+	//Color Blending
+	VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | 
+		VK_COLOR_COMPONENT_G_BIT | 
+		VK_COLOR_COMPONENT_B_BIT | 
+		VK_COLOR_COMPONENT_A_BIT;
+
+	//Blending operation settings
+	colorBlendAttachment.blendEnable = VK_TRUE;
+	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+	//Framebuffer blend constants
+	VkPipelineColorBlendStateCreateInfo colorBlending{};
+	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colorBlending.logicOpEnable = VK_FALSE;
+	colorBlending.logicOp = VK_LOGIC_OP_COPY;
+	colorBlending.attachmentCount = 1;
+	colorBlending.pAttachments = &colorBlendAttachment;
+	colorBlending.blendConstants[0] = 0.0f;
+	colorBlending.blendConstants[1] = 0.0f;
+	colorBlending.blendConstants[2] = 0.0f;
+	colorBlending.blendConstants[3] = 0.0f;
+
+	//Specify uniforms in pipeline layout
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutInfo.setLayoutCount = 0;
+	pipelineLayoutInfo.pSetLayouts = nullptr;
+	pipelineLayoutInfo.pushConstantRangeCount = 0;
+	pipelineLayoutInfo.pPushConstantRanges = nullptr;
+
+	if (vkCreatePipelineLayout(mDevice, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to create pipeline layout!\n");
+	}
+
+
 
 	//Cleanup shader modules
 	vkDestroyShaderModule(mDevice, fragShaderModule, nullptr);

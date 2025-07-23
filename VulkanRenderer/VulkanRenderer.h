@@ -65,7 +65,6 @@ struct SwapChainSupportDetails
 /// </summary>
 class VulkanRenderer {
 public:
-	VulkanRenderer();
 	~VulkanRenderer();
 
 	void init();
@@ -74,7 +73,7 @@ public:
 
 private:
 
-	void initWindow();
+	void createWindow();
 	void createInstance();
 	void createSurface();
 
@@ -84,6 +83,7 @@ private:
 	void createSwapChain();
 	void createImageViews();
 
+	void createRenderPass();
 	void createGraphicsPipeline();
 
 	int getDeviceSuitablility(VkPhysicalDevice device);
@@ -141,4 +141,5 @@ private:
 	std::vector<VkImageView> mSwapChainImageViews;
 	VkFormat mSwapChainImageFormat;
 	VkExtent2D mSwapChainExtent;
+	VkPipelineLayout mPipelineLayout;
 };
