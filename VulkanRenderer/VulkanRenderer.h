@@ -65,6 +65,7 @@ struct SwapChainSupportDetails
 /// </summary>
 class VulkanRenderer {
 public:
+	VulkanRenderer();
 	~VulkanRenderer();
 
 	void init();
@@ -143,5 +144,5 @@ private:
 	VkExtent2D mSwapChainExtent;
 	VkRenderPass mRenderPass;
 	VkPipelineLayout mPipelineLayout;
-	VkPipeline& mGraphicsPipeline;
+	VkPipeline mGraphicsPipeline;
 };

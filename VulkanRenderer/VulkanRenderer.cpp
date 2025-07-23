@@ -13,6 +13,8 @@ void VulkanRenderer::createWindow()
 	mpWindow = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 }
 
+VulkanRenderer::VulkanRenderer() {}
+
 VulkanRenderer::~VulkanRenderer()
 {
 	cleanup();
