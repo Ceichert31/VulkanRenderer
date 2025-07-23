@@ -143,4 +143,5 @@ private:
 	VkExtent2D mSwapChainExtent;
 	VkRenderPass mRenderPass;
 	VkPipelineLayout mPipelineLayout;
+	VkPipeline& mGraphicsPipeline;
 };
