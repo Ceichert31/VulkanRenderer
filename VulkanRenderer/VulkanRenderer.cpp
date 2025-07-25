@@ -38,6 +38,10 @@ void VulkanRenderer::init()
 
 void VulkanRenderer::cleanup()
 {
+	vkDestroySemaphore(mDevice, mImageAvailableSemaphore, nullptr);
+	vkDestroySemaphore(mDevice, mRenderFinishedSemaphore, nullptr);
+	vkDestroyFence(mDevice, mInFlightFence, nullptr);
+
 	vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 
 	for (auto framebuffer : mSwapChainFramebuffers)
@@ -82,6 +86,25 @@ void VulkanRenderer::update()
 	{
 		glfwPollEvents();
 	}
+}
+
+void VulkanRenderer::drawFrame()
+{
+	//Wait for fence without timeout
+	vkWaitForFences(mDevice, 1, &mInFlightFence, VK_TRUE, UINT64_MAX);
+
+	//Reset fence afterwards
+	vkResetFences(mDevice, 1, &mInFlightFence);
+
+	//Get the index of the next image we will render
+	uint32_t imageIndex;
+	vkAcquireNextImageKHR(mDevice, mSwapChain, UINT64_MAX, 
+		mImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+	//Reset command buffer before recording
+	vkResetCommandBuffer(mCommandBuffer, 0);
+
+	recordCommandBuffer(mCommandBuffer, imageIndex);
 }
 
 void VulkanRenderer::createInstance()
@@ -893,6 +916,23 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	if (vkEndCommandBuffer(mCommandBuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("ERROR: Failed to record command buffer!\n");
+	}
+}
+
+void VulkanRenderer::createSyncObjects()
+{
+	VkSemaphoreCreateInfo semaphoreInfo{};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VkFenceCreateInfo fenceInfo{};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphore) != VK_SUCCESS ||
+		vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderFinishedSemaphore) != VK_SUCCESS ||
+		vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFence) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to create semaphores!\n");
 	}
 }
 

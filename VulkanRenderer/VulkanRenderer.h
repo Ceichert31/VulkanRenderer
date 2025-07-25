@@ -70,6 +70,7 @@ public:
 
 	void init();
 	void update();
+	void drawFrame();
 	void cleanup();
 
 private:
@@ -92,6 +93,8 @@ private:
 	void createCommandPool();
 	void createCommandBuffer();
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
+	void createSyncObjects();
 
 	int getDeviceSuitablility(VkPhysicalDevice device);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
@@ -148,10 +151,17 @@ private:
 	std::vector<VkImageView> mSwapChainImageViews;
 	VkFormat mSwapChainImageFormat;
 	VkExtent2D mSwapChainExtent;
+
 	VkRenderPass mRenderPass;
 	VkPipelineLayout mPipelineLayout;
 	VkPipeline mGraphicsPipeline;
+
 	std::vector<VkFramebuffer> mSwapChainFramebuffers;
+
 	VkCommandPool mCommandPool;
 	VkCommandBuffer mCommandBuffer;
+
+	VkSemaphore mImageAvailableSemaphore;
+	VkSemaphore mRenderFinishedSemaphore;
+	VkFence mInFlightFence;
 };
