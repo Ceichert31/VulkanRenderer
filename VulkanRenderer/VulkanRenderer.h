@@ -86,6 +86,7 @@ private:
 
 	void createRenderPass();
 	void createGraphicsPipeline();
+	void createFramebuffers();
 
 	int getDeviceSuitablility(VkPhysicalDevice device);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
@@ -145,4 +146,5 @@ private:
 	VkRenderPass mRenderPass;
 	VkPipelineLayout mPipelineLayout;
 	VkPipeline mGraphicsPipeline;
+	std::vector<VkFramebuffer> mSwapChainFramebuffers;
 };

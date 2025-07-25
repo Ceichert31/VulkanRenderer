@@ -36,6 +36,11 @@ void VulkanRenderer::init()
 
 void VulkanRenderer::cleanup()
 {
+	for (auto framebuffer : mSwapChainFramebuffers)
+	{
+		vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
+	}
+
 	vkDestroyPipeline(mDevice, mGraphicsPipeline, nullptr);
 
 	vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
@@ -758,6 +763,34 @@ void VulkanRenderer::createGraphicsPipeline()
 	//Cleanup shader modules
 	vkDestroyShaderModule(mDevice, fragShaderModule, nullptr);
 	vkDestroyShaderModule(mDevice, vertShaderModule, nullptr);
+}
+
+void VulkanRenderer::createFramebuffers()
+{
+	//Resize to hold all framebuffers
+	mSwapChainFramebuffers.resize(mSwapChainImageViews.size());
+
+	//Create framebuffers from image views
+	for (size_t i = 0; i < mSwapChainImageViews.size(); i++)
+	{
+		VkImageView attachments[] = {
+			mSwapChainImageViews[i]
+		};
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = mRenderPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = mSwapChainExtent.width;
+		framebufferInfo.height = mSwapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(mDevice, &framebufferInfo, nullptr, &mSwapChainFramebuffers[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("ERROR: Failed to create framebuffer: " + i);
+		}
+	}
 }
 
 /// <summary>
