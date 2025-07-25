@@ -34,6 +34,8 @@ void VulkanRenderer::init()
 	createGraphicsPipeline();
 	createFramebuffers();
 	createCommandPool();
+	createCommandBuffer();
+	createSyncObjects();
 }
 
 void VulkanRenderer::cleanup()
@@ -85,7 +87,11 @@ void VulkanRenderer::update()
 	while (!glfwWindowShouldClose(mpWindow))
 	{
 		glfwPollEvents();
+		drawFrame();
 	}
+
+	//Wait for async operations to stop before cleaning up
+	vkDeviceWaitIdle(mDevice);
 }
 
 void VulkanRenderer::drawFrame()
@@ -128,7 +134,22 @@ void VulkanRenderer::drawFrame()
 		throw std::runtime_error("ERROR: Failed to submit draw command buffer!\n");
 	}
 
+	//Presentation info
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
+	//Set our signal semaphore as the wait semaphore so 
+	//the renderer waits until the commands are executed to render
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;
+
+	VkSwapchainKHR swapChains[] = { mSwapChain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+	presentInfo.pImageIndices = &imageIndex;
+	presentInfo.pResults = nullptr;
+	
+	vkQueuePresentKHR(mPresentQueue, &presentInfo);
 }
 
 void VulkanRenderer::createInstance()
