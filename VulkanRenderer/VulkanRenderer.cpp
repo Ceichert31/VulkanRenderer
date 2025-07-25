@@ -800,6 +800,9 @@ void VulkanRenderer::createFramebuffers()
 	}
 }
 
+/// <summary>
+/// Creates a command pool using queue family indices
+/// </summary>
 void VulkanRenderer::createCommandPool()
 {
 	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(mPhysicalDevice);
@@ -812,6 +815,37 @@ void VulkanRenderer::createCommandPool()
 	if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool) != VK_SUCCESS)
 	{
 		throw std::runtime_error("ERROR: Failed to create command pool!\n");
+	}
+}
+
+/// <summary>
+/// Creates the command buffer using the command pool  
+/// </summary>
+void VulkanRenderer::createCommandBuffer()
+{
+	VkCommandBufferAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocateInfo.commandPool = mCommandPool;
+	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocateInfo.commandBufferCount = 1;
+
+	if (vkAllocateCommandBuffers(mDevice, &allocateInfo, &mCommandBuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to create command buffers!\n");
+	}
+}
+
+//Starts recording the command buffer
+void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+{
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = 0;
+	beginInfo.pInheritanceInfo = nullptr;
+
+	if (vkBeginCommandBuffer(mCommandBuffer, &beginInfo) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to begin recording command buffer!\n");
 	}
 }
 
