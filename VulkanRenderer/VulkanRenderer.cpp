@@ -835,9 +835,10 @@ void VulkanRenderer::createCommandBuffer()
 	}
 }
 
-//Starts recording the command buffer
+//Starts recording the command buffer and the render pass
 void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
+	//Begin recording command buffer
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0;
@@ -846,6 +847,52 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	if (vkBeginCommandBuffer(mCommandBuffer, &beginInfo) != VK_SUCCESS)
 	{
 		throw std::runtime_error("ERROR: Failed to begin recording command buffer!\n");
+	}
+
+	//Start render pass
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = mRenderPass;
+	renderPassInfo.framebuffer = mSwapChainFramebuffers[imageIndex];
+
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = mSwapChainExtent;
+
+	VkClearValue clearColor = { {{ 0.0f, 0.0f, 0.0f, 1.0f }} };
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearColor;
+
+	vkCmdBeginRenderPass(mCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	
+	//Bind the graphics pipeline (VK_PIPELINE_BIND_POINT_COMPUTE for compute pipelines)
+	vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+
+	//Specify our dynamic pipeline values here
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = (float)mSwapChainExtent.width;
+	viewport.height = (float)mSwapChainExtent.height;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
+	//Update our viewport
+	vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
+
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = mSwapChainExtent;
+
+	//Update our scissor
+	vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
+
+	//Issue draw command for triangle
+	vkCmdDraw(mCommandBuffer, 3, 1, 0, 0);
+
+	vkCmdEndRenderPass(mCommandBuffer);
+	if (vkEndCommandBuffer(mCommandBuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to record command buffer!\n");
 	}
 }
 
