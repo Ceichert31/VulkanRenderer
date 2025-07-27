@@ -44,8 +44,8 @@ static std::vector<char> readFile(const std::string& filename);
 /// </summary>
 struct QueueFamilyIndices
 {
-	std::optional<uint32_t> graphicsFamily;
-	std::optional<uint32_t> presentFamily;
+	std::optional<uint32_t> graphicsFamily{};
+	std::optional<uint32_t> presentFamily{};
 
 	bool isComplete() const
 	{
@@ -53,11 +53,14 @@ struct QueueFamilyIndices
 	}
 };
 
+/// <summary>
+/// All details necessary for creating a swapchain
+/// </summary>
 struct SwapChainSupportDetails
 {
-	VkSurfaceCapabilitiesKHR capabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> presentModes;
+	VkSurfaceCapabilitiesKHR capabilities{};
+	std::vector<VkSurfaceFormatKHR> formats{};
+	std::vector<VkPresentModeKHR> presentModes{};
 };
 
 /// <summary>
@@ -136,30 +139,30 @@ private:
 		const VkAllocationCallbacks* pAllocator);
 
 	//Member variables
-	VkInstance mInstance;
-	VkDebugUtilsMessengerEXT mDebugMessenger;
-	GLFWwindow* mpWindow;
-	VkDevice mDevice;
+	VkInstance mInstance{};
+	VkDebugUtilsMessengerEXT mDebugMessenger{};
+	GLFWwindow* mpWindow{};
+	VkDevice mDevice{};
 
-	VkPhysicalDevice mPhysicalDevice;
-	VkQueue mGraphicsQueue;
-	VkQueue mPresentQueue;
-	VkSurfaceKHR mSurface;
-	VkSwapchainKHR mSwapChain;
-	std::vector<VkImage> mSwapChainImages;
-	std::vector<VkImageView> mSwapChainImageViews;
-	std::vector<VkFramebuffer> mSwapChainFramebuffers;
-	VkFormat mSwapChainImageFormat;
-	VkExtent2D mSwapChainExtent;
+	VkPhysicalDevice mPhysicalDevice{};
+	VkQueue mGraphicsQueue{};
+	VkQueue mPresentQueue{};
+	VkSurfaceKHR mSurface{};
+	VkSwapchainKHR mSwapChain{};
+	std::vector<VkImage> mSwapChainImages{};
+	std::vector<VkImageView> mSwapChainImageViews{};
+	std::vector<VkFramebuffer> mSwapChainFramebuffers{};
+	VkFormat mSwapChainImageFormat{};
+	VkExtent2D mSwapChainExtent{};
 
-	VkRenderPass mRenderPass;
-	VkPipelineLayout mPipelineLayout;
-	VkPipeline mGraphicsPipeline;
-	VkCommandPool mCommandPool;
-	VkCommandBuffer mCommandBuffer;
+	VkRenderPass mRenderPass{};
+	VkPipelineLayout mPipelineLayout{};
+	VkPipeline mGraphicsPipeline{};
+	VkCommandPool mCommandPool{};
+	VkCommandBuffer mCommandBuffer{};
 
 	//Sync objects
-	VkSemaphore mImageAvailableSemaphore;
-	VkSemaphore mRenderFinishedSemaphore;
-	VkFence mInFlightFence;
+	VkSemaphore mImageAvailableSemaphore{};
+	VkSemaphore mRenderFinishedSemaphore{};
+	VkFence mInFlightFence{};
 };

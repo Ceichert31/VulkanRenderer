@@ -402,7 +402,7 @@ int VulkanRenderer::getDeviceSuitablility(VkPhysicalDevice device)
 	}
 	else
 	{
-		suitability += swapChainSupport.formats.size() + swapChainSupport.presentModes.size();
+		suitability += (int)(swapChainSupport.formats.size() + swapChainSupport.presentModes.size());
 	}
 
 	return suitability;
@@ -551,7 +551,7 @@ void VulkanRenderer::createImageViews()
 /// <returns></returns>
 SwapChainSupportDetails VulkanRenderer::getSwapChainSupport(VkPhysicalDevice device) const
 {
-	SwapChainSupportDetails details;
+	SwapChainSupportDetails details{};
 
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, mSurface, &details.capabilities);
 
@@ -564,9 +564,6 @@ SwapChainSupportDetails VulkanRenderer::getSwapChainSupport(VkPhysicalDevice dev
 		details.formats.resize(formatCount);
 		vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, details.formats.data());
 	}
-
-
-
 	return details;
 }
 
