@@ -69,9 +69,9 @@ public:
 	~VulkanRenderer();
 
 	void init();
+	void cleanup();
 	void update();
 	void drawFrame();
-	void cleanup();
 
 private:
 
@@ -85,28 +85,26 @@ private:
 	void createSwapChain();
 	void createImageViews();
 
+	//Pipeline and renderer creation
 	void createRenderPass();
-
 	void createGraphicsPipeline();
 	void createFramebuffers();
-
 	void createCommandPool();
 	void createCommandBuffer();
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-
 	void createSyncObjects();
 
 	int getDeviceSuitablility(VkPhysicalDevice device);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
+	//Swap chain supporting functions
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
-
-	SwapChainSupportDetails getSwapChainSupport(VkPhysicalDevice device);
+	SwapChainSupportDetails getSwapChainSupport(VkPhysicalDevice device) const;
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector <VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
-	VkShaderModule createShaderModule(const std::vector<char>& code);
+	VkShaderModule createShaderModule(const std::vector<char>& code) const;
 
 	VkResult vkCreateInstance_Ext(const VkInstanceCreateInfo* pCreateInfo,
 		const VkAllocationCallbacks* pAllocator,
@@ -142,6 +140,7 @@ private:
 	VkDebugUtilsMessengerEXT mDebugMessenger;
 	GLFWwindow* mpWindow;
 	VkDevice mDevice;
+
 	VkPhysicalDevice mPhysicalDevice;
 	VkQueue mGraphicsQueue;
 	VkQueue mPresentQueue;
@@ -149,18 +148,17 @@ private:
 	VkSwapchainKHR mSwapChain;
 	std::vector<VkImage> mSwapChainImages;
 	std::vector<VkImageView> mSwapChainImageViews;
+	std::vector<VkFramebuffer> mSwapChainFramebuffers;
 	VkFormat mSwapChainImageFormat;
 	VkExtent2D mSwapChainExtent;
 
 	VkRenderPass mRenderPass;
 	VkPipelineLayout mPipelineLayout;
 	VkPipeline mGraphicsPipeline;
-
-	std::vector<VkFramebuffer> mSwapChainFramebuffers;
-
 	VkCommandPool mCommandPool;
 	VkCommandBuffer mCommandBuffer;
 
+	//Sync objects
 	VkSemaphore mImageAvailableSemaphore;
 	VkSemaphore mRenderFinishedSemaphore;
 	VkFence mInFlightFence;
