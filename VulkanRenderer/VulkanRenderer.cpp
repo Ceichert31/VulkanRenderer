@@ -1,11 +1,6 @@
 ﻿#include "VulkanRenderer.h"
 
-#include <filesystem>
-
-VulkanRenderer::VulkanRenderer() {
-
-	std::cout << "CURRENT DIRECTORY: " << std::filesystem::current_path() << std::endl;
-}
+VulkanRenderer::VulkanRenderer() {}
 
 VulkanRenderer::~VulkanRenderer()
 {
@@ -29,7 +24,7 @@ void VulkanRenderer::init()
 	createGraphicsPipeline();
 	createFramebuffers();
 	createCommandPool();
-	createCommandBuffer();
+	createCommandBuffers();
 	createSyncObjects();
 }
 
@@ -38,9 +33,12 @@ void VulkanRenderer::init()
 /// </summary>
 void VulkanRenderer::cleanup()
 {
-	vkDestroySemaphore(mDevice, mImageAvailableSemaphore, nullptr);
-	vkDestroySemaphore(mDevice, mRenderFinishedSemaphore, nullptr);
-	vkDestroyFence(mDevice, mInFlightFence, nullptr);
+	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+		vkDestroySemaphore(mDevice, mImageAvailableSemaphore[i], nullptr);
+		vkDestroySemaphore(mDevice, mRenderFinishedSemaphore[i], nullptr);
+		vkDestroyFence(mDevice, mInFlightFence[i], nullptr);
+	}
 
 	vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 
@@ -110,9 +108,9 @@ void VulkanRenderer::drawFrame()
 		mImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
 	//Reset command buffer before recording
-	vkResetCommandBuffer(mCommandBuffer, 0);
+	vkResetCommandBuffer(mCommandBuffers, 0);
 
-	recordCommandBuffer(mCommandBuffer, imageIndex);
+	recordCommandBuffer(mCommandBuffers, imageIndex);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -124,7 +122,7 @@ void VulkanRenderer::drawFrame()
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &mCommandBuffer;
+	submitInfo.pCommandBuffers = &mCommandBuffers;
 
 	//This semaphore is signaled once command execution is completed
 	VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphore };
@@ -989,17 +987,21 @@ void VulkanRenderer::createCommandPool()
 }
 
 /// <summary>
-/// Creates the command buffer using the command pool  
+/// Creates command buffers using the command pool
 /// </summary>
-void VulkanRenderer::createCommandBuffer()
+void VulkanRenderer::createCommandBuffers()
 {
+	//Resize command buffers vector to
+	//our max amount of parallel frames
+	mCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
 	VkCommandBufferAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocateInfo.commandPool = mCommandPool;
 	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocateInfo.commandBufferCount = 1;
+	allocateInfo.commandBufferCount = (uint32_t)mCommandBuffers.size();
 
-	if (vkAllocateCommandBuffers(mDevice, &allocateInfo, &mCommandBuffer) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(mDevice, &allocateInfo, mCommandBuffers.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("ERROR: Failed to create command buffers!\n");
 	}
@@ -1018,7 +1020,7 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	beginInfo.flags = 0;
 	beginInfo.pInheritanceInfo = nullptr;
 
-	if (vkBeginCommandBuffer(mCommandBuffer, &beginInfo) != VK_SUCCESS)
+	if (vkBeginCommandBuffer(mCommandBuffers, &beginInfo) != VK_SUCCESS)
 	{
 		throw std::runtime_error("ERROR: Failed to begin recording command buffer!\n");
 	}
@@ -1036,10 +1038,10 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
 
-	vkCmdBeginRenderPass(mCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(mCommandBuffers, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	//Bind the graphics pipeline (VK_PIPELINE_BIND_POINT_COMPUTE for compute pipelines)
-	vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+	vkCmdBindPipeline(mCommandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
 
 	//Specify our dynamic pipeline values here
 	VkViewport viewport{};
@@ -1051,20 +1053,20 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	viewport.maxDepth = 1.0f;
 
 	//Update our viewport
-	vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
+	vkCmdSetViewport(mCommandBuffers, 0, 1, &viewport);
 
 	VkRect2D scissor{};
 	scissor.offset = { 0, 0 };
 	scissor.extent = mSwapChainExtent;
 
 	//Update our scissor
-	vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
+	vkCmdSetScissor(mCommandBuffers, 0, 1, &scissor);
 
 	//Issue draw command for triangle
-	vkCmdDraw(mCommandBuffer, 3, 1, 0, 0);
+	vkCmdDraw(mCommandBuffers, 3, 1, 0, 0);
 
-	vkCmdEndRenderPass(mCommandBuffer);
-	if (vkEndCommandBuffer(mCommandBuffer) != VK_SUCCESS)
+	vkCmdEndRenderPass(mCommandBuffers);
+	if (vkEndCommandBuffer(mCommandBuffers) != VK_SUCCESS)
 	{
 		throw std::runtime_error("ERROR: Failed to record command buffer!\n");
 	}
@@ -1075,6 +1077,10 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 /// </summary>
 void VulkanRenderer::createSyncObjects()
 {
+	mImageAvailableSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
+	mRenderFinishedSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
+	mInFlightFence.resize(MAX_FRAMES_IN_FLIGHT);
+
 	VkSemaphoreCreateInfo semaphoreInfo{};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -1082,11 +1088,14 @@ void VulkanRenderer::createSyncObjects()
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphore) != VK_SUCCESS ||
-		vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderFinishedSemaphore) != VK_SUCCESS ||
-		vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFence) != VK_SUCCESS)
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		throw std::runtime_error("ERROR: Failed to create semaphores!\n");
+		if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphore[i]) != VK_SUCCESS ||
+		vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderFinishedSemaphore[i]) != VK_SUCCESS ||
+		vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFence[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("ERROR: Failed to create synchronization objects!\n");
+		}
 	}
 }
 #pragma endregion
