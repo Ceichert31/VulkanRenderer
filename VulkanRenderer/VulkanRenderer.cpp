@@ -1,6 +1,6 @@
 ﻿#include "VulkanRenderer.h"
 
-VulkanRenderer::VulkanRenderer() {}
+VulkanRenderer::VulkanRenderer() = default;
 
 VulkanRenderer::~VulkanRenderer()
 {
@@ -34,7 +34,7 @@ void VulkanRenderer::init()
 void VulkanRenderer::cleanup()
 {
 	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-		{
+	{
 		vkDestroySemaphore(mDevice, mImageAvailableSemaphore[i], nullptr);
 		vkDestroySemaphore(mDevice, mRenderFinishedSemaphore[i], nullptr);
 		vkDestroyFence(mDevice, mInFlightFence[i], nullptr);
@@ -50,7 +50,7 @@ void VulkanRenderer::cleanup()
 	vkDestroyPipeline(mDevice, mGraphicsPipeline, nullptr);
 
 	vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
-	
+
 	vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
 
 	for (auto imageView : mSwapChainImageViews)
@@ -97,39 +97,39 @@ void VulkanRenderer::update()
 void VulkanRenderer::drawFrame()
 {
 	//Wait for fence without timeout
-	vkWaitForFences(mDevice, 1, &mInFlightFence, VK_TRUE, UINT64_MAX);
+	vkWaitForFences(mDevice, 1, &mInFlightFence[mCurrentFrame], VK_TRUE, UINT64_MAX);
 
 	//Reset fence afterwards
-	vkResetFences(mDevice, 1, &mInFlightFence);
+	vkResetFences(mDevice, 1, &mInFlightFence[mCurrentFrame]);
 
 	//Get the index of the next image we will render
 	uint32_t imageIndex;
 	vkAcquireNextImageKHR(mDevice, mSwapChain, UINT64_MAX,
-		mImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+		mImageAvailableSemaphore[mCurrentFrame], VK_NULL_HANDLE, &imageIndex);
 
 	//Reset command buffer before recording
-	vkResetCommandBuffer(mCommandBuffers, 0);
+	vkResetCommandBuffer(mCommandBuffers[mCurrentFrame], 0);
 
-	recordCommandBuffer(mCommandBuffers, imageIndex);
+	recordCommandBuffer(mCommandBuffers[mCurrentFrame], imageIndex);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
 	//Have semaphores wait at color writing stage
-	VkSemaphore waitSemaphores[] = { mImageAvailableSemaphore };
+	VkSemaphore waitSemaphores[] = { mImageAvailableSemaphore[mCurrentFrame] };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &mCommandBuffers;
+	submitInfo.pCommandBuffers = &mCommandBuffers[mCurrentFrame];
 
 	//This semaphore is signaled once command execution is completed
-	VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphore };
+	VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphore[mCurrentFrame] };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mInFlightFence) != VK_SUCCESS)
+	if (vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mInFlightFence[mCurrentFrame]) != VK_SUCCESS)
 	{
 		throw std::runtime_error("ERROR: Failed to submit draw command buffer!\n");
 	}
@@ -138,7 +138,7 @@ void VulkanRenderer::drawFrame()
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-	//Set our signal semaphore as the wait semaphore so 
+	//Set our signal semaphore as the wait semaphore so
 	//the renderer waits until the commands are executed to render
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pWaitSemaphores = signalSemaphores;
@@ -150,6 +150,8 @@ void VulkanRenderer::drawFrame()
 	presentInfo.pResults = nullptr;
 
 	vkQueuePresentKHR(mPresentQueue, &presentInfo);
+
+	mCurrentFrame = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 #pragma region Window/Vulkan Creation Functions
@@ -268,7 +270,7 @@ void VulkanRenderer::pickPhysicalDevice()
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
 
-	//Map of available devices 
+	//Map of available devices
 	std::multimap<int, VkPhysicalDevice> availableDevices;
 
 	//Get suitability of all devices and add to ordered map
@@ -435,7 +437,7 @@ bool VulkanRenderer::checkDeviceExtensionSupport(VkPhysicalDevice device)
 		requiredExtensions.erase(extension.extensionName);
 	}
 
-	//If the set is empty it means we have all our required 
+	//If the set is empty it means we have all our required
 	return requiredExtensions.empty();
 }
 #pragma endregion
@@ -664,7 +666,7 @@ QueueFamilyIndices VulkanRenderer::findQueueFamilies(VkPhysicalDevice device) co
 	int queueFamilyIndex = 0;
 	VkBool32 presentSupport = false;
 
-	//Find available queue families that support graphics commands 
+	//Find available queue families that support graphics commands
 	// and windows surface presentation
 	for (const auto& queueFamily : queueFamilies)
 	{
@@ -704,7 +706,7 @@ void VulkanRenderer::createRenderPass()
 	//Only 1 bit because we aren't multisampling as of right now
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 
-	//We are clearing the framebuffer each frame 
+	//We are clearing the framebuffer each frame
 	// and storing rendered contents to memory
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -833,7 +835,7 @@ void VulkanRenderer::createGraphicsPipeline()
 	viewportState.scissorCount = 1;
 	viewportState.pScissors = &scissor;
 
-	//Rasterizer 
+	//Rasterizer
 	VkPipelineRasterizationStateCreateInfo rasterizer{};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	//If enabled, instead of clipping geometry out of far-plane it is clamped
@@ -1020,7 +1022,7 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	beginInfo.flags = 0;
 	beginInfo.pInheritanceInfo = nullptr;
 
-	if (vkBeginCommandBuffer(mCommandBuffers, &beginInfo) != VK_SUCCESS)
+	if (vkBeginCommandBuffer(mCommandBuffers[mCurrentFrame], &beginInfo) != VK_SUCCESS)
 	{
 		throw std::runtime_error("ERROR: Failed to begin recording command buffer!\n");
 	}
@@ -1038,10 +1040,10 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
 
-	vkCmdBeginRenderPass(mCommandBuffers, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(mCommandBuffers[mCurrentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	//Bind the graphics pipeline (VK_PIPELINE_BIND_POINT_COMPUTE for compute pipelines)
-	vkCmdBindPipeline(mCommandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+	vkCmdBindPipeline(mCommandBuffers[mCurrentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
 
 	//Specify our dynamic pipeline values here
 	VkViewport viewport{};
@@ -1053,20 +1055,20 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	viewport.maxDepth = 1.0f;
 
 	//Update our viewport
-	vkCmdSetViewport(mCommandBuffers, 0, 1, &viewport);
+	vkCmdSetViewport(mCommandBuffers[mCurrentFrame], 0, 1, &viewport);
 
 	VkRect2D scissor{};
 	scissor.offset = { 0, 0 };
 	scissor.extent = mSwapChainExtent;
 
 	//Update our scissor
-	vkCmdSetScissor(mCommandBuffers, 0, 1, &scissor);
+	vkCmdSetScissor(mCommandBuffers[mCurrentFrame], 0, 1, &scissor);
 
 	//Issue draw command for triangle
-	vkCmdDraw(mCommandBuffers, 3, 1, 0, 0);
+	vkCmdDraw(mCommandBuffers[mCurrentFrame], 3, 1, 0, 0);
 
-	vkCmdEndRenderPass(mCommandBuffers);
-	if (vkEndCommandBuffer(mCommandBuffers) != VK_SUCCESS)
+	vkCmdEndRenderPass(mCommandBuffers[mCurrentFrame]);
+	if (vkEndCommandBuffer(mCommandBuffers[mCurrentFrame]) != VK_SUCCESS)
 	{
 		throw std::runtime_error("ERROR: Failed to record command buffer!\n");
 	}
@@ -1177,7 +1179,7 @@ void VulkanRenderer::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreat
 	createInfo.sType =
 		VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 
-	//Call callback for these severities 
+	//Call callback for these severities
 	createInfo.messageSeverity =
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
@@ -1197,7 +1199,7 @@ void VulkanRenderer::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreat
 /// <summary>
 /// Callback function for vulkan debug messages
 /// </summary>
-/// <param name="messageSeverity">The severity of the message 
+/// <param name="messageSeverity">The severity of the message
 /// (Diagnostic, Info, Warning, Error) </param>
 /// <param name="messageType">What the message is relating to
 /// (General, Validation, Performance)</param>
@@ -1218,7 +1220,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRenderer::debugCallback(VkDebugUtilsMessage
 }
 
 /// <summary>
-/// Looks up the vkCreateDebugUtilsMessengerEXT 
+/// Looks up the vkCreateDebugUtilsMessengerEXT
 /// function and passes our debug messenger to it
 /// </summary>
 /// <param name="instance"></param>
@@ -1245,7 +1247,7 @@ VkResult VulkanRenderer::createDebugUtilsMessengerEXT(VkInstance instance, const
 }
 
 /// <summary>
-/// Looks up the vkDestroyDebugUtilsMessengerEXT 
+/// Looks up the vkDestroyDebugUtilsMessengerEXT
 /// function and passes our debug messenger to it
 /// </summary>
 /// <param name="instance"></param>

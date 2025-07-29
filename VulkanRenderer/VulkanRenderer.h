@@ -167,4 +167,6 @@ private:
 	std::vector<VkSemaphore> mImageAvailableSemaphore{};
 	std::vector<VkSemaphore> mRenderFinishedSemaphore{};
 	std::vector<VkFence> mInFlightFence{};
+
+	uint32_t mCurrentFrame{};
 };
