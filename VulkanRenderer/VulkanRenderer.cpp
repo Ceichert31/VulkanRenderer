@@ -1,6 +1,11 @@
 ﻿#include "VulkanRenderer.h"
 
-VulkanRenderer::VulkanRenderer() {}
+#include <filesystem>
+
+VulkanRenderer::VulkanRenderer() {
+
+	std::cout << "CURRENT DIRECTORY: " << std::filesystem::current_path() << std::endl;
+}
 
 VulkanRenderer::~VulkanRenderer()
 {
@@ -755,8 +760,8 @@ void VulkanRenderer::createRenderPass()
 void VulkanRenderer::createGraphicsPipeline()
 {
 	//Cache shader code as binary
-	auto vertShaderCode = readFile(WORKING_DIRECTORY + "shaders/vert.spv");
-	auto fragShaderCode = readFile(WORKING_DIRECTORY + "shaders/frag.spv");
+	auto vertShaderCode = readFile("../shaders/vert.spv");
+	auto fragShaderCode = readFile("../shaders/frag.spv");
 
 	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
