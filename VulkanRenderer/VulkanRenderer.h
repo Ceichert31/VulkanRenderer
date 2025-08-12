@@ -90,6 +90,9 @@ private:
 	void createSwapChain();
 	void createImageViews();
 
+	void recreateSwapChain();
+	void cleanupSwapChain();
+
 	//Pipeline and renderer creation
 	void createRenderPass();
 	void createGraphicsPipeline();
@@ -167,6 +170,8 @@ private:
 	std::vector<VkSemaphore> mImageAvailableSemaphore{};
 	std::vector<VkSemaphore> mRenderFinishedSemaphore{};
 	std::vector<VkFence> mInFlightFence{};
+
+	bool mFramebufferResized{};
 
 	uint32_t mCurrentFrame{};
 };
