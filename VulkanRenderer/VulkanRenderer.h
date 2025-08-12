@@ -83,6 +83,7 @@ private:
 	void createWindow();
 	void createInstance();
 	void createSurface();
+	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
 	void pickPhysicalDevice();
 	void createLogicalDevice();

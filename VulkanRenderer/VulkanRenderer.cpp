@@ -180,6 +180,8 @@ void VulkanRenderer::createWindow()
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
 	mpWindow = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+	glfwSetWindowUserPointer(mpWindow, this);
+	glfwSetFramebufferSizeCallback(mpWindow, framebufferResizeCallback);
 }
 
 /// <summary>
@@ -255,6 +257,15 @@ void VulkanRenderer::createSurface()
 	{
 		throw std::runtime_error("ERROR: Failed to create a window surface!\n");
 	}
+}
+
+/// <summary>
+///	Sets off the frame buffer resized flag
+/// </summary>
+void VulkanRenderer::framebufferResizeCallback(GLFWwindow *window, int width, int height)
+{
+	auto app = (VulkanRenderer*)glfwGetWindowUserPointer(window);
+	app->mFramebufferResized = true;
 }
 #pragma endregion
 
