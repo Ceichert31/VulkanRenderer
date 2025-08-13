@@ -570,6 +570,17 @@ void VulkanRenderer::createImageViews()
 /// </summary>
 void VulkanRenderer::recreateSwapChain()
 {
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(mpWindow, &width, &height);
+
+	//If application is minimized, wait until it no
+	//longer is to continue the swap chain
+	while (width == 0 || height == 0)
+	{
+		glfwGetFramebufferSize(mpWindow, &width, &height);
+		glfwWaitEvents();
+	}
+
 	vkDeviceWaitIdle(mDevice);
 
 	cleanupSwapChain();
