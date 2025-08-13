@@ -860,11 +860,14 @@ void VulkanRenderer::createGraphicsPipeline()
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
+	auto bindingDescriptions = Vertex::getBindingDescription();
+	auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
 	//Set vertex binding to null for now because we are using hard-coded values
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr;
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescriptions;
+	vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)attributeDescriptions.size();
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	//Input Assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
