@@ -177,7 +177,7 @@ void VulkanRenderer::createWindow()
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 	//Disable window resizing
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
 	mpWindow = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 	glfwSetWindowUserPointer(mpWindow, this);
