@@ -6,6 +6,7 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_EXPSOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
+#include <glm/glm.hpp>
 
 #include <stdexcept>
 #include <cstdlib>
@@ -63,6 +64,32 @@ struct SwapChainSupportDetails
 	VkSurfaceCapabilitiesKHR capabilities{};
 	std::vector<VkSurfaceFormatKHR> formats{};
 	std::vector<VkPresentModeKHR> presentModes{};
+};
+
+/// <summary>
+/// Holds all vertex information
+/// </summary>
+struct Vertex
+{
+	glm::vec2 position{};
+	glm::vec3 color{};
+
+	///Defines the stride of the binding
+	static VkVertexInputBindingDescription getBindingDescription()
+	{
+		VkVertexInputBindingDescription bindingDescription{};
+		bindingDescription.binding = 0;
+		bindingDescription.stride = sizeof(Vertex);
+		//Use instance here for instanced rendering
+		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		return bindingDescription;
+	}
+};
+
+const std::vector<Vertex> VERTICES = {
+	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
 };
 
 /// <summary>
