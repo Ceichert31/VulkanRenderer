@@ -1218,9 +1218,10 @@ uint32_t VulkanRenderer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFla
 
 	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
 	{
+		//Check if a bit at index is set to 1
 		if (typeFilter & (1 << i))
 		{
-			return 1;
+			return i;
 		}
 	}
 
