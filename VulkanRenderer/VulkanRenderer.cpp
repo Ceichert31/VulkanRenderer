@@ -24,6 +24,7 @@ void VulkanRenderer::init()
 	createGraphicsPipeline();
 	createFramebuffers();
 	createCommandPool();
+	createVertexBuffer();
 	createCommandBuffers();
 	createSyncObjects();
 }
@@ -43,6 +44,8 @@ void VulkanRenderer::cleanup()
 	vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 
 	cleanupSwapChain();
+
+	vkDestroyBuffer(mDevice, mVertexBuffer, nullptr);
 
 	vkDestroyPipeline(mDevice, mGraphicsPipeline, nullptr);
 
@@ -1161,6 +1164,30 @@ void VulkanRenderer::createSyncObjects()
 		}
 	}
 }
+
+void VulkanRenderer::createVertexBuffer()
+{
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+
+	//Size of vertex buffer
+	bufferInfo.size = sizeof(VERTICES[0]) * VERTICES.size();
+
+	//Vertex buffer can have multiple usages
+	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	bufferInfo.flags = 0;
+
+	if (vkCreateBuffer(mDevice, &bufferInfo, nullptr, &mVertexBuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to create vertex buffer!\n");
+	}
+
+	VkMemoryRequirements memoryRequirements;
+	vkGetBufferMemoryRequirements(mDevice, mVertexBuffer, &memoryRequirements);
+
+
+}
 #pragma endregion
 
 #pragma region Shader/Loading Functions
@@ -1182,6 +1209,22 @@ VkShaderModule VulkanRenderer::createShaderModule(const std::vector<char> &code)
 		throw std::runtime_error("ERROR: Failed to create shader module!\n");
 	}
 	return shaderModule;
+}
+
+uint32_t VulkanRenderer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+	vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &memoryProperties);
+
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+	{
+		if (typeFilter & (1 << i))
+		{
+			return 1;
+		}
+	}
+
+	throw std::runtime_error("ERROR: Failed to find suitable memory type!\n");
 }
 
 /// <summary>

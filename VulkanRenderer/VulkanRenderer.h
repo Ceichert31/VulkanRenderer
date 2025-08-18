@@ -149,6 +149,7 @@ private:
 	void createCommandBuffers();
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void createSyncObjects();
+	void createVertexBuffer();
 
 	int getDeviceSuitablility(VkPhysicalDevice device);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
@@ -161,6 +162,8 @@ private:
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
 	VkShaderModule createShaderModule(const std::vector<char>& code) const;
+
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 	VkResult vkCreateInstance_Ext(const VkInstanceCreateInfo* pCreateInfo,
 		const VkAllocationCallbacks* pAllocator,
@@ -222,4 +225,6 @@ private:
 	bool mFramebufferResized{};
 
 	uint32_t mCurrentFrame{};
+
+	VkBuffer mVertexBuffer{};
 };
