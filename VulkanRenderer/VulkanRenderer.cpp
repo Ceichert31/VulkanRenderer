@@ -538,7 +538,7 @@ void VulkanRenderer::createSwapChain()
 }
 
 /// <summary>
-/// Creates image views and adds them to a memeber variable
+/// Creates image views and adds them to a member variable
 /// </summary>
 void VulkanRenderer::createImageViews()
 {
@@ -597,7 +597,7 @@ void VulkanRenderer::recreateSwapChain()
 }
 
 /// <summary>
-/// Cleanup old objects that rely on the swapchain
+/// Cleanup old objects that rely on the swap chain
 /// </summary>
 void VulkanRenderer::cleanupSwapChain()
 {
@@ -708,7 +708,7 @@ VkExtent2D VulkanRenderer::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capa
 }
 
 /// <summary>
-/// Returns queue families that support specfic requirements
+/// Returns queue families that support specific requirements
 /// </summary>
 /// <param name="device"></param>
 /// <returns></returns>
@@ -1007,7 +1007,7 @@ void VulkanRenderer::createGraphicsPipeline()
 }
 
 /// <summary>
-/// Initializes framebuffers using the swapchains formats and settings
+/// Initializes framebuffers using the swap chains formats and settings
 /// </summary>
 void VulkanRenderer::createFramebuffers()
 {
@@ -1281,7 +1281,7 @@ std::vector<char> readFile(const std::string &filename)
 
 	//Start reading file from start
 	file.seekg(0);
-	file.read(buffer.data(), fileSize);
+	file.read(buffer.data(), (long)fileSize);
 
 	file.close();
 	return buffer;
@@ -1290,7 +1290,7 @@ std::vector<char> readFile(const std::string &filename)
 
 #pragma region Debug Messenger Methods
 /// <summary>
-/// Initializes the debug messenger and flags which messeges to recieve
+/// Initializes the debug messenger and flags which messages to receive
 /// </summary>
 void VulkanRenderer::setupDebugMessenger()
 {
@@ -1460,10 +1460,9 @@ std::vector<const char *> VulkanRenderer::getRequiredExtensions()
 {
 	//Retrieve extension count
 	uint32_t extensionCount = 0;
-	const char **glfwExtensions;
 
 	//Get required vulkan extensions
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
+	const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
 
 	std::vector<const char *> extensions(glfwExtensions,
 	                                     glfwExtensions + extensionCount);
