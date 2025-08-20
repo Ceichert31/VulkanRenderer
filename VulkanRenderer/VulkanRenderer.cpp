@@ -60,7 +60,7 @@ void VulkanRenderer::cleanup()
 
 	glfwDestroyWindow(mpWindow);
 
-	if (enabledValidationLayers)
+	if (ENABLED_VALIDATION_LAYERS)
 	{
 		destroyDebugUtilsMessengerEXT(mInstance,
 		                              mDebugMessenger, nullptr);
@@ -224,16 +224,16 @@ void VulkanRenderer::createInstance()
 	}
 
 	//Check we can use validation layers
-	if (enabledValidationLayers && !checkValidationLayerSupport())
+	if (ENABLED_VALIDATION_LAYERS && !checkValidationLayerSupport())
 	{
 		throw std::runtime_error("ERROR: Missing Required Validation Layers!\n");
 	}
 
 	//Fill info in VK create info
-	if (enabledValidationLayers)
+	if (ENABLED_VALIDATION_LAYERS)
 	{
-		createInfo.enabledLayerCount = (uint32_t) validationLayers.size();
-		createInfo.ppEnabledLayerNames = validationLayers.data();
+		createInfo.enabledLayerCount = (uint32_t) VALIDATION_LAYERS.size();
+		createInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
 
 		//Setup debug messenger now so we can debug our instance creation
 		populateDebugMessengerCreateInfo(debugCreateInfo);
@@ -360,14 +360,14 @@ void VulkanRenderer::createLogicalDevice()
 	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
 	//Extension settings
-	deviceCreateInfo.enabledExtensionCount = (uint32_t) deviceExtensions.size();
-	deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
+	deviceCreateInfo.enabledExtensionCount = (uint32_t) DEVICE_EXTENSIONS.size();
+	deviceCreateInfo.ppEnabledExtensionNames = DEVICE_EXTENSIONS.data();
 
 	//Validation layer settings
-	if (enabledValidationLayers)
+	if (ENABLED_VALIDATION_LAYERS)
 	{
-		deviceCreateInfo.enabledLayerCount = (uint32_t) validationLayers.size();
-		deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+		deviceCreateInfo.enabledLayerCount = (uint32_t) VALIDATION_LAYERS.size();
+		deviceCreateInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
 	} else
 	{
 		deviceCreateInfo.enabledLayerCount = 0;
@@ -453,7 +453,7 @@ bool VulkanRenderer::checkDeviceExtensionSupport(VkPhysicalDevice device)
 	//Retrieve extension data
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
-	std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+	std::set<std::string> requiredExtensions(DEVICE_EXTENSIONS.begin(), DEVICE_EXTENSIONS.end());
 
 	//Remove required extensions from the set
 	for (const auto &extension: availableExtensions)
@@ -1131,8 +1131,15 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	//Update our scissor
 	vkCmdSetScissor(mCommandBuffers[mCurrentFrame], 0, 1, &scissor);
 
+	vkCmdBindPipeline(mCommandBuffers[mCurrentFrame],
+		VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+	VkBuffer vertexBuffers[] = {mVertexBuffer};
+	VkDeviceSize offsets[] = {0};
+	vkCmdBindVertexBuffers(mCommandBuffers[mCurrentFrame],
+		0, 1, vertexBuffers, offsets);
+
 	//Issue draw command for triangle
-	vkCmdDraw(mCommandBuffers[mCurrentFrame], 3, 1, 0, 0);
+	vkCmdDraw(mCommandBuffers[mCurrentFrame], (uint32_t)VERTICES.size(), 1, 0, 0);
 
 	vkCmdEndRenderPass(mCommandBuffers[mCurrentFrame]);
 	if (vkEndCommandBuffer(mCommandBuffers[mCurrentFrame]) != VK_SUCCESS)
@@ -1287,7 +1294,7 @@ std::vector<char> readFile(const std::string &filename)
 /// </summary>
 void VulkanRenderer::setupDebugMessenger()
 {
-	if (!enabledValidationLayers) return;
+	if (!ENABLED_VALIDATION_LAYERS) return;
 
 	//Populate info for messenger
 	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
@@ -1462,7 +1469,7 @@ std::vector<const char *> VulkanRenderer::getRequiredExtensions()
 	                                     glfwExtensions + extensionCount);
 
 	//Add debug extension
-	if (enabledValidationLayers)
+	if (ENABLED_VALIDATION_LAYERS)
 	{
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
@@ -1485,7 +1492,7 @@ bool VulkanRenderer::checkValidationLayerSupport()
 	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
 	//Check that all validation layers exist in available layers
-	for (const char *requiredLayer: validationLayers)
+	for (const char *requiredLayer: VALIDATION_LAYERS)
 	{
 		for (const auto &availableLayer: availableLayers)
 		{

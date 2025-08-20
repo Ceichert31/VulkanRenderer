@@ -31,15 +31,15 @@ constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 //const std::string WORKING_DIRECTORY = "../../../";
 
 //Validation layers
-const std::vector<const char*> validationLayers = {
+const std::vector<const char*> VALIDATION_LAYERS = {
 	"VK_LAYER_KHRONOS_validation",
 };
 
-const std::vector<const char*> deviceExtensions = {
+const std::vector<const char*> DEVICE_EXTENSIONS = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-constexpr bool enabledValidationLayers = true;
+constexpr bool ENABLED_VALIDATION_LAYERS = true;
 
 static std::vector<char> readFile(const std::string& filename);
 
