@@ -46,6 +46,9 @@ void VulkanRenderer::cleanup()
 	cleanupSwapChain();
 
 	vkDestroyBuffer(mDevice, mVertexBuffer, nullptr);
+	vkFreeMemory(mDevice, mVertexBufferMemory, nullptr);
+
+	vkDestroyBuffer(mDevice, mVertexBuffer, nullptr);
 
 	vkDestroyPipeline(mDevice, mGraphicsPipeline, nullptr);
 
@@ -300,11 +303,11 @@ void VulkanRenderer::pickPhysicalDevice()
 	//Get suitability of all devices and add to ordered map
 	for (const auto &device: devices)
 	{
-		int suitability = getDeviceSuitablility(device);
+		int suitability = getDeviceSuitability(device);
 		availableDevices.insert(std::make_pair(suitability, device));
 	}
 
-	//Get highest rated device, if there is no device throw error
+	//Get the highest rated device, if there is no device throw error
 	if (availableDevices.rbegin()->first > 0)
 	{
 		physicalDevice = availableDevices.rbegin()->second;
@@ -387,7 +390,7 @@ void VulkanRenderer::createLogicalDevice()
 /// </summary>
 /// <param name="device"></param>
 /// <returns></returns>
-int VulkanRenderer::getDeviceSuitablility(VkPhysicalDevice device)
+int VulkanRenderer::getDeviceSuitability(VkPhysicalDevice device)
 {
 	int suitability = 0;
 
@@ -406,7 +409,7 @@ int VulkanRenderer::getDeviceSuitablility(VkPhysicalDevice device)
 	}
 
 	//Max possible size of textures affects graphics quality
-	suitability += deviceProperties.limits.maxImageDimension2D;
+	suitability += (int)deviceProperties.limits.maxImageDimension2D;
 
 	//Program can't function without geometry shader
 	if (!deviceFeatures.geometryShader)
@@ -988,7 +991,7 @@ void VulkanRenderer::createGraphicsPipeline()
 	pipelineInfo.renderPass = mRenderPass;
 	pipelineInfo.subpass = 0;
 
-	//Used to set up a new pipeline from an exsisting one
+	//Used to set up a new pipeline from an existing one
 	//See (VK_PIPELINE_CREATE_DERIVATIVE_BIT)
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineInfo.basePipelineIndex = -1;
@@ -1029,7 +1032,7 @@ void VulkanRenderer::createFramebuffers()
 
 		if (vkCreateFramebuffer(mDevice, &framebufferInfo, nullptr, &mSwapChainFramebuffers[i]) != VK_SUCCESS)
 		{
-			throw std::runtime_error("ERROR: Failed to create framebuffer: " + i);
+			throw std::runtime_error("ERROR: Failed to create framebuffer\n");
 		}
 	}
 }
@@ -1196,6 +1199,17 @@ void VulkanRenderer::createVertexBuffer()
 	{
 		throw std::runtime_error("ERROR: Failed to allocate vertex buffer memory!\n");
 	}
+
+	//After verifying allocation was successful we can now bind the memory
+	if (vkBindBufferMemory(mDevice, mVertexBuffer, mVertexBufferMemory, 0) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to bind vertex buffer memory!\n");
+	}
+
+	void* data;
+	vkMapMemory(mDevice, mVertexBufferMemory, 0, bufferInfo.size, 0, &data);
+	memcpy(data, VERTICES.data(), (size_t)bufferInfo.size);
+	vkUnmapMemory(mDevice, mVertexBufferMemory);
 }
 #pragma endregion
 
@@ -1470,7 +1484,7 @@ bool VulkanRenderer::checkValidationLayerSupport()
 	std::vector<VkLayerProperties> availableLayers(layerCount);
 	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-	//Check that all validation layers exsist in available layers
+	//Check that all validation layers exist in available layers
 	for (const char *requiredLayer: validationLayers)
 	{
 		for (const auto &availableLayer: availableLayers)
