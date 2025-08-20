@@ -1186,7 +1186,16 @@ void VulkanRenderer::createVertexBuffer()
 	VkMemoryRequirements memoryRequirements;
 	vkGetBufferMemoryRequirements(mDevice, mVertexBuffer, &memoryRequirements);
 
+	VkMemoryAllocateInfo allocationInfo{};
+	allocationInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocationInfo.allocationSize = memoryRequirements.size;
+	allocationInfo.memoryTypeIndex = findMemoryType(memoryRequirements.memoryTypeBits,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
+	if (vkAllocateMemory(mDevice, &allocationInfo, nullptr, &mVertexBufferMemory) != VK_SUCCESS)
+	{
+		throw std::runtime_error("ERROR: Failed to allocate vertex buffer memory!\n");
+	}
 }
 #pragma endregion
 
@@ -1219,7 +1228,9 @@ uint32_t VulkanRenderer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFla
 	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
 	{
 		//Check if a bit at index is set to 1
-		if (typeFilter & (1 << i))
+		if (typeFilter & (1 << i) &&
+			(memoryProperties.memoryTypes[i].propertyFlags & properties) ==
+			properties)
 		{
 			return i;
 		}

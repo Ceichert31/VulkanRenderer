@@ -227,4 +227,5 @@ private:
 	uint32_t mCurrentFrame{};
 
 	VkBuffer mVertexBuffer{};
+	VkDeviceMemory mVertexBufferMemory{};
 };
